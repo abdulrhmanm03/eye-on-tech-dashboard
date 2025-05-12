@@ -8,13 +8,13 @@ import { AuthProvider } from "./context/AuthContext.tsx";
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-                <Router>
-                    <App />
-                </Router>
-            </AuthProvider>
-        </QueryClientProvider>
-    </StrictMode>,
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <App />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
+  </StrictMode>,
 );

@@ -4,13 +4,13 @@ from enums import UserRole
 class UserBase(BaseModel):
     username: str
     password: str
-    role: UserRole
 
 class UserCreate(UserBase):
-    pass
+    role: UserRole
 
 class UserRead(UserBase):
     id: int
+    role: UserRole
 
     class Config:
         from_attributes = True
