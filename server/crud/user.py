@@ -13,6 +13,25 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+def delete_user(db: Session, user_id: int):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return None
+    db.delete(user)
+    db.commit()
+    return user
+
+def update_user(db: Session, user_data: schemas.UserCreate):
+    user = db.query(models.User).filter(models.User.username == user_data.username).first() 
+    if not user:
+        return None
+
+    user.username = user_data.username
+    user.role = user_data.role
+    db.commit()
+    db.refresh(user)
+    return user
+
 def get_users(db: Session):
     return db.query(models.User).all()
 

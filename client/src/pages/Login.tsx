@@ -29,8 +29,9 @@ export default function LoginForm() {
 
   const mutation = useMutation({
     mutationFn: loginRequest,
-    onSuccess: () => {
-      login();
+    onSuccess: (data) => {
+      login(data.access_token);
+      console.log("works");
       navigate("/home");
     },
     onError: (error) => {

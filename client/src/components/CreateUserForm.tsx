@@ -15,7 +15,13 @@ interface CreateUserDialogProps {
   onSubmit: (username: string, password: string, role: string) => void;
 }
 
-const roles = ["Administrator", "Editor", "Viewer"];
+const roles = [
+  "Supervisor",
+  "Administrator",
+  "Engineer",
+  "Technician",
+  "Client",
+];
 
 const CreateUserForm: React.FC<CreateUserDialogProps> = ({
   open,

@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from db import get_db
 from auth.auth import authenticate_user
-from schemas.user import UserBase, UserCreate
+from schemas.user import UserBase 
 from auth.jwt_utils import create_access_token
+from schemas.token import Token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/login", response_model=str)
+@router.post("/login", response_model=Token)
 def login(user: UserBase, db: Session = Depends(get_db)):
     authenticated_user = authenticate_user(db, username=user.username, password=user.password)
     if not authenticated_user:
@@ -18,8 +19,11 @@ def login(user: UserBase, db: Session = Depends(get_db)):
     
     # Create JWT token
     access_token = create_access_token(
-        data={"username": authenticated_user.username}
+        data={"username": authenticated_user.username, "role": authenticated_user.role}
     )
     
-    return access_token
+    return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
 
