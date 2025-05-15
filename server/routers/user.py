@@ -1,11 +1,11 @@
 from typing import Dict
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, status 
 from sqlalchemy.orm import Session
 from schemas import user as schemas
 from crud import user as crud
 from db import get_db
 from auth.utils import get_current_user
-from enums import UserRole
+from enums.user_role import UserRole
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -44,7 +44,11 @@ def delete_user(
 
 
 @router.put("/", response_model=schemas.UserRead)
-def update_user(user: schemas.UserCreate, db: Session = Depends(get_db), payload: dict = Depends(get_current_user)):
+def update_user(
+    user: schemas.UserRead,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(get_current_user)
+):
     user_role = payload.get("role")
 
     if user_role not in [UserRole.supervisor, UserRole.administrator]:
@@ -53,7 +57,7 @@ def update_user(user: schemas.UserCreate, db: Session = Depends(get_db), payload
             detail="You do not have permission to update users",
         )
 
-    updated_user = crud.update_user(db, user)
+    updated_user = crud.update_user(db, user_data=user)
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

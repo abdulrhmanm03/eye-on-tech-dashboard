@@ -21,8 +21,8 @@ def delete_user(db: Session, user_id: int):
     db.commit()
     return user
 
-def update_user(db: Session, user_data: schemas.UserCreate):
-    user = db.query(models.User).filter(models.User.username == user_data.username).first() 
+def update_user(db: Session, user_data: schemas.UserRead):
+    user = db.query(models.User).filter(models.User.id == user_data.id).first() 
     if not user:
         return None
 

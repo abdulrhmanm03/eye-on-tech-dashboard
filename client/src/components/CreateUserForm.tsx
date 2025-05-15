@@ -58,6 +58,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
+          variant="standard"
         />
         <TextField
           label="Password"
@@ -65,6 +66,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           fullWidth
+          variant="standard"
         />
         <TextField
           select
@@ -72,6 +74,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           value={role}
           onChange={(e) => setRole(e.target.value)}
           fullWidth
+          variant="standard"
         >
           {roles.map((r) => (
             <MenuItem key={r} value={r}>

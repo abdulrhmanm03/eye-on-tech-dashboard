@@ -3,18 +3,22 @@ import SpeedDial from "@mui/material/SpeedDial";
 import SpeedDialAction from "@mui/material/SpeedDialAction";
 import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import AddBoxIcon from "@mui/icons-material/AddBox";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+
 import CreateUserForm from "./CreateUserForm";
+import CreateTicketForm from "./CreateTicketForm";
+import CreateAssetForm from "./CreateAssetForm"; // ✅ Import form and type
 import api from "../axios_conf";
 import { useMutation } from "@tanstack/react-query";
 
-interface Action {
-  icon: React.ReactNode;
-  name: string;
-  onClick: () => void;
-}
+// Asset creation request
+const createAssetRequest = async (data: any) => {
+  const res = await api.post("/assets/create", data);
+  return res.data;
+};
 
+// User creation request
 const createUserRequest = async (credentials: {
   username: string;
   password: string;
@@ -25,30 +29,21 @@ const createUserRequest = async (credentials: {
 };
 
 const ActionMenu: React.FC = () => {
-  const actions: Action[] = [
-    {
-      icon: <PersonAddIcon />,
-      name: "Create User",
-      onClick: () => setCreateOpen(true),
-    },
-    {
-      icon: <EditIcon />,
-      name: "Edit User",
-      onClick: () => alert("Edit User"),
-    },
-    {
-      icon: <DeleteIcon />,
-      name: "Delete User",
-      onClick: () => alert("Delete User"),
-    },
-  ];
+  const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [createTicketOpen, setCreateTicketOpen] = useState(false);
+  const [createAssetOpen, setCreateAssetOpen] = useState(false); // ✅ New state
 
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const mutation = useMutation({
+  const userMutation = useMutation({
     mutationFn: createUserRequest,
     onError: (error) => {
       console.error("Failed to create user:", error);
+    },
+  });
+
+  const assetMutation = useMutation({
+    mutationFn: createAssetRequest,
+    onError: (error) => {
+      console.error("Failed to create asset:", error);
     },
   });
 
@@ -57,8 +52,31 @@ const ActionMenu: React.FC = () => {
     password: string,
     role: string,
   ) => {
-    mutation.mutate({ username, password, role });
+    userMutation.mutate({ username, password, role });
   };
+
+  const handleCreateAsset = (assetData: any) => {
+    assetMutation.mutate(assetData);
+  };
+
+  const actions = [
+    {
+      icon: <PersonAddIcon />,
+      name: "Add User",
+      onClick: () => setCreateUserOpen(true),
+    },
+    {
+      icon: <ConfirmationNumberIcon />,
+      name: "Create Ticket",
+      onClick: () => setCreateTicketOpen(true),
+    },
+    {
+      icon: <AddBoxIcon />,
+      name: "Add Asset",
+      onClick: () => setCreateAssetOpen(true), // ✅ Hook into state
+    },
+  ];
+
   return (
     <>
       <SpeedDial
@@ -75,10 +93,25 @@ const ActionMenu: React.FC = () => {
           />
         ))}
       </SpeedDial>
+
+      {/* Create User Dialog */}
       <CreateUserForm
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        open={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
         onSubmit={handleCreateUser}
+      />
+
+      {/* Create Ticket Dialog */}
+      <CreateTicketForm
+        open={createTicketOpen}
+        onClose={() => setCreateTicketOpen(false)}
+      />
+
+      {/* Create Asset Dialog */}
+      <CreateAssetForm
+        open={createAssetOpen}
+        onClose={() => setCreateAssetOpen(false)}
+        onSubmit={handleCreateAsset}
       />
     </>
   );
