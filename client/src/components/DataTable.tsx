@@ -17,6 +17,8 @@ import { useState } from "react";
 import Confirm from "./Confirm";
 import EditUserForm from "./EditUserForm"; // ✅ Import edit form
 import EditTicketForm from "./EditTicketForm";
+import EditAssetForm from "./EditAssetForm";
+import UserDetails from "./UserDetails";
 
 type Props = {
   view: string;
@@ -35,6 +37,10 @@ const deleteTicket = async (id: number) => {
   await api.delete(`/tickets/delete/${id}`);
 };
 
+const deleteAsset = async (id: number) => {
+  await api.delete(`/assets/delete/${id}`);
+};
+
 const updateUser = async (user: any) => {
   const res = await api.put("/users", user);
   return res.data;
@@ -45,13 +51,19 @@ const updateTicket = async (id: number, ticket: any) => {
   return res.data;
 };
 
+const updateAsset = async (id: number, ticket: any) => {
+  const res = await api.put(`/assets/${id}`, ticket);
+  return res.data;
+};
+
 export default function DataTable({ view }: Props) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<any | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [rowToEdit, setRowToEdit] = useState<any | null>(null);
-
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
@@ -65,6 +77,8 @@ export default function DataTable({ view }: Props) {
         await updateUser(updatedItem);
       } else if (view.toLowerCase() === "tickets" && itemId) {
         await updateTicket(itemId, updatedItem);
+      } else if (view.toLowerCase() === "assets" && itemId) {
+        await updateAsset(itemId, updatedItem);
       }
       queryClient.invalidateQueries([view]);
     } catch (error) {
@@ -80,6 +94,8 @@ export default function DataTable({ view }: Props) {
         await deleteUser(rowToDelete.id);
       } else if (view.toLowerCase() === "tickets") {
         await deleteTicket(rowToDelete.id);
+      } else if (view.toLowerCase() === "assets") {
+        await deleteAsset(rowToDelete.id);
       }
 
       queryClient.invalidateQueries([view]);
@@ -108,11 +124,6 @@ export default function DataTable({ view }: Props) {
             <TableHead>
               <TableRow>
                 {keys.map((key) => (
-                  // {/* <TableCell key={key}> */}
-                  // {/*   {key.toUpperCase()} */}
-                  // {/*                        */}
-                  // {/*   sx={{color: 'red'}} */}
-                  // {/* </TableCell> */}
                   <TableCell
                     key={key}
                     sx={{
@@ -141,7 +152,13 @@ export default function DataTable({ view }: Props) {
                   key={row.id}
                   hover
                   selected={selectedId === row.id}
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => {
+                    setSelectedId(row.id);
+                    if (view.toLowerCase() === "users") {
+                      setSelectedUser(row);
+                      setDetailsOpen(true);
+                    }
+                  }}
                   sx={{ cursor: "pointer" }}
                 >
                   {keys.map((key) => (
@@ -192,7 +209,9 @@ export default function DataTable({ view }: Props) {
         message={
           view.toLowerCase() === "users"
             ? `Are you sure you want to delete user "${rowToDelete?.username || "this user"}"?`
-            : `Are you sure you want to delete ticket #${rowToDelete?.id}?`
+            : view.toLowerCase() === "tickets"
+              ? `Are you sure you want to delete ticket #${rowToDelete?.id}?`
+              : `Are you sure you want to delete asset "${rowToDelete?.name || rowToDelete?.id}"?`
         }
         onConfirm={handleDelete}
         onCancel={() => {
@@ -222,6 +241,29 @@ export default function DataTable({ view }: Props) {
             setRowToEdit(null);
           }}
           onSave={handleSave}
+        />
+      )}
+
+      {rowToEdit && view.toLowerCase() === "assets" && (
+        <EditAssetForm
+          open={editOpen}
+          asset={rowToEdit}
+          onClose={() => {
+            setEditOpen(false);
+            setRowToEdit(null);
+          }}
+          onSave={handleSave}
+        />
+      )}
+
+      {selectedUser && (
+        <UserDetails
+          open={detailsOpen}
+          user={selectedUser}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedUser(null);
+          }}
         />
       )}
     </>
