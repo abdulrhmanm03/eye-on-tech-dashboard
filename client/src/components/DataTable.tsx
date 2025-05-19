@@ -19,6 +19,8 @@ import EditUserForm from "./EditUserForm"; // ✅ Import edit form
 import EditTicketForm from "./EditTicketForm";
 import EditAssetForm from "./EditAssetForm";
 import UserDetails from "./UserDetails";
+import TicketDetails from "./TicketDetails";
+import AssetDetails from "./AssetDetails";
 
 type Props = {
   view: string;
@@ -51,8 +53,8 @@ const updateTicket = async (id: number, ticket: any) => {
   return res.data;
 };
 
-const updateAsset = async (id: number, ticket: any) => {
-  const res = await api.put(`/assets/${id}`, ticket);
+const updateAsset = async (id: number, asset: any) => {
+  const res = await api.put(`/assets/${id}`, asset);
   return res.data;
 };
 
@@ -65,6 +67,8 @@ export default function DataTable({ view }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const queryClient = useQueryClient();
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: [view],
@@ -154,8 +158,15 @@ export default function DataTable({ view }: Props) {
                   selected={selectedId === row.id}
                   onClick={() => {
                     setSelectedId(row.id);
-                    if (view.toLowerCase() === "users") {
+                    const v = view.toLowerCase();
+                    if (v === "users") {
                       setSelectedUser(row);
+                      setDetailsOpen(true);
+                    } else if (v === "tickets") {
+                      setSelectedTicket(row);
+                      setDetailsOpen(true);
+                    } else if (v === "assets") {
+                      setSelectedAsset(row);
                       setDetailsOpen(true);
                     }
                   }}
@@ -263,6 +274,38 @@ export default function DataTable({ view }: Props) {
           onClose={() => {
             setDetailsOpen(false);
             setSelectedUser(null);
+          }}
+        />
+      )}
+      {selectedUser && view.toLowerCase() === "users" && (
+        <UserDetails
+          open={detailsOpen}
+          user={selectedUser}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedUser(null);
+          }}
+        />
+      )}
+
+      {selectedTicket && view.toLowerCase() === "tickets" && (
+        <TicketDetails
+          open={detailsOpen}
+          ticket={selectedTicket}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedTicket(null);
+          }}
+        />
+      )}
+
+      {selectedAsset && view.toLowerCase() === "assets" && (
+        <AssetDetails
+          open={detailsOpen}
+          asset={selectedAsset}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedAsset(null);
           }}
         />
       )}

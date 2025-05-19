@@ -7,6 +7,8 @@ from db import get_db
 from auth.utils import get_current_user
 from models.user import User
 from enums.user_role import UserRole
+from schemas.component import ComponentRead
+from crud import component as component_crud
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -27,6 +29,10 @@ def list_assets(
     current_user: User = Depends(get_current_user)
 ):
     return crud_asset.get_assets(db, skip=skip, limit=limit)
+
+@router.get("/components/{asset_id}", response_model=List[ComponentRead])
+def get_ticket_tasks(asset_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return component_crud.get_asset_components(db, asset_id, skip, limit)
 
 @router.get("/{asset_id}", response_model=AssetRead)
 def read_asset(

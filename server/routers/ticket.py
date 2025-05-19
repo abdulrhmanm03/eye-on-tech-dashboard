@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.ticket import TicketCreate, TicketRead
+from schemas.task import TaskRead
 from crud import ticket as crud_ticket
+from crud import task as crud_task
 from db import get_db
 from auth.utils import get_current_user
 from models.user import User
@@ -18,6 +20,10 @@ def create_ticket(ticket_in: TicketCreate, db: Session = Depends(get_db), curren
 @router.get("/", response_model=List[TicketRead])
 def list_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return crud_ticket.get_tickets(db, skip, limit)
+
+@router.get("/tasks/{ticket_id}", response_model=List[TaskRead])
+def get_ticket_tasks(ticket_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return crud_task.get_ticket_tasks(db, ticket_id, skip, limit)
 
 @router.get("/{ticket_id}", response_model=TicketRead)
 def read_ticket(ticket_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

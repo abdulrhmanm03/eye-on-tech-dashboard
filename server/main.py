@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import engine, Base
-from routers import user, auth, ticket, asset, poc
+from routers import user, auth, ticket, asset, poc, task, component
 
 app = FastAPI()
 
@@ -20,3 +20,5 @@ app.include_router(auth.router)
 app.include_router(ticket.router)
 app.include_router(asset.router)
 app.include_router(poc.router)
+app.include_router(task.router)
+app.include_router(component.router)
