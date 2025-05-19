@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.asset import AssetCreate, AssetRead
@@ -18,6 +18,12 @@ def create_asset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    user_role = current_user.get("role")
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action",
+            )
     asset = crud_asset.create_asset(db, asset_in)
     return asset
 
@@ -52,6 +58,13 @@ def update_asset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    user_role = current_user.get("role")
+
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
     updated = crud_asset.update_asset(db, asset_id, asset_in)
     if not updated:
         raise HTTPException(status_code=404, detail="Asset not found")

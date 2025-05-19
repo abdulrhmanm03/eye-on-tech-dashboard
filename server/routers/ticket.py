@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.ticket import TicketCreate, TicketRead
@@ -19,6 +19,10 @@ def create_ticket(ticket_in: TicketCreate, db: Session = Depends(get_db), curren
 
 @router.get("/", response_model=List[TicketRead])
 def list_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user_id = current_user.get("id")
+    user_role = current_user.get("role")
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+        return crud_ticket.get_user_tickets(db, user_id)
     return crud_ticket.get_tickets(db, skip, limit)
 
 @router.get("/tasks/{ticket_id}", response_model=List[TaskRead])
@@ -34,6 +38,13 @@ def read_ticket(ticket_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.put("/{ticket_id}", response_model=TicketRead)
 def update_ticket(ticket_id: int, ticket_in: TicketCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user_role = current_user.get("role")
+
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
     updated = crud_ticket.update_ticket(db, ticket_id, ticket_in)
     if not updated:
         raise HTTPException(status_code=404, detail="Ticket not found")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.component import ComponentCreate, ComponentRead
@@ -6,6 +6,7 @@ from crud import component as crud_component
 from db import get_db
 from auth.utils import get_current_user
 from models.user import User
+from enums.user_role import UserRole
 
 router = APIRouter(prefix="/components", tags=["components"])
 
@@ -27,6 +28,13 @@ def read_component(component_id: int, db: Session = Depends(get_db), current_use
 
 @router.put("/{component_id}", response_model=ComponentRead)
 def update_component(component_id: int, component_in: ComponentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user_role = current_user.get("role")
+
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
     updated = crud_component.update_component(db, component_id, component_in)
     if not updated:
         raise HTTPException(status_code=404, detail="Component not found")
@@ -34,6 +42,9 @@ def update_component(component_id: int, component_in: ComponentCreate, db: Sessi
 
 @router.delete("/delete/{component_id}", status_code=204)
 def delete_component(component_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user_role = current_user.get("role")
+    if user_role != UserRole.supervisor:
+        raise HTTPException(status_code=403, detail="Forbidden")
     success = crud_component.delete_component(db, component_id)
     if not success:
         raise HTTPException(status_code=404, detail="Component not found")

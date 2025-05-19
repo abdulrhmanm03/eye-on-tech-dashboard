@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models import user as models
 from schemas import user as schemas
 from auth.utils import hash_password
+from config import DEFAULT_PASSWORD
 
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = hash_password(user.password)
@@ -37,3 +38,15 @@ def get_users(db: Session):
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
+def reset_user_password(db: Session, user_id: int): 
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    
+    if not user:
+        return None
+
+    hashed_password = hash_password(DEFAULT_PASSWORD)
+    user.password = hashed_password
+    db.commit()
+    db.refresh(user)
+
+    return user

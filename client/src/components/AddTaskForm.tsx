@@ -101,7 +101,7 @@ export default function AddTaskForm({ open, onClose, onSave, ownerId }: Props) {
             value={formData.status}
             onChange={handleChange}
           >
-            <MenuItem value="In progress">In Progress</MenuItem>
+            <MenuItem value="In Progress">In Progress</MenuItem>
             <MenuItem value="Completed">Completed</MenuItem>
           </TextField>
         </Stack>
