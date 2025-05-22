@@ -8,6 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useState } from "react";
+import api from "../axios_conf"; // Make sure this is imported
 
 type Props = {
   open: boolean;
@@ -28,19 +29,25 @@ export default function AddPocForm({ open, onClose, onSave, userId }: Props) {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const pocPayload = {
       ...formData,
       user_id: userId,
     };
-    onSave(pocPayload);
-    onClose();
-    setFormData({
-      organization: "",
-      full_name: "",
-      phone_number: "",
-      email: "",
-    });
+
+    try {
+      const response = await api.post(`/pocs/user/${userId}`, pocPayload);
+      onSave(response.data);
+      onClose();
+      setFormData({
+        organization: "",
+        full_name: "",
+        phone_number: "",
+        email: "",
+      });
+    } catch (err) {
+      console.error("Failed to add PoC", err);
+    }
   };
 
   return (

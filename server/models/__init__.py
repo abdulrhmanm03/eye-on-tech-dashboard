@@ -9,3 +9,4 @@ from .asset import Asset
 from .ticket import Ticket
 from .task import Task
 from .component import Component
+from .report import Report 

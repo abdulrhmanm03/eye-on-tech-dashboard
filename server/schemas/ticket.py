@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date
 from enums.ticket_status import TicketStatus
 
@@ -13,8 +13,7 @@ class TicketBase(BaseModel):
 
 # For creating a ticket
 class TicketCreate(TicketBase):
-    owner_id: int
-    handler_ids: List[int]  # IDs of technicians assigned to the ticket
+    handler_ids: Optional[List[int]]  # IDs of technicians assigned to the ticket
 
 # Minimal user schema for handlers
 class UserBasic(BaseModel):

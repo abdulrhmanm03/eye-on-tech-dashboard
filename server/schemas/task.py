@@ -12,12 +12,12 @@ class TaskBase(BaseModel):
 
 # For creating a task
 class TaskCreate(TaskBase):
-    owner_id: int
+    ticket_id: int
 
 # For reading a task
 class TaskRead(TaskBase):
     id: int
-    owner_id: int
+    ticket_id: int
 
     class Config:
         from_attributes = True

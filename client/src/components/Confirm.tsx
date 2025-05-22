@@ -29,7 +29,7 @@ export default function Confirm({
       <DialogActions>
         <Button onClick={onCancel}>Cancel</Button>
         <Button variant="contained" color="error" onClick={onConfirm}>
-          Delete
+          Confirm
         </Button>
       </DialogActions>
     </Dialog>

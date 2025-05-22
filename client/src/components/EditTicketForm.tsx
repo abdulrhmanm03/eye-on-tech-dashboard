@@ -8,17 +8,16 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import TicketStatus from "../enums/TicketStatus";
+import api from "../axios_conf";
 
-const statuses = ["Open", "InProgress", "Closed"];
-
-export default function EditTicketForm({ open, onClose, ticket, onSave }: any) {
+export default function EditTicketForm({ open, onClose, ticket }: any) {
   const [formData, setFormData] = useState({
     object_type: "",
     object_id: 0,
     description: "",
     creation_date: "",
     status: "Open",
-    owner_id: 0,
     handler_ids: [],
   });
 
@@ -30,7 +29,6 @@ export default function EditTicketForm({ open, onClose, ticket, onSave }: any) {
         description: ticket.description || "",
         creation_date: ticket.creation_date?.split("T")[0] || "",
         status: ticket.status || "Open",
-        owner_id: ticket.owner_id || 0,
         handler_ids: ticket.handler_ids || [],
       });
     }
@@ -40,18 +38,21 @@ export default function EditTicketForm({ open, onClose, ticket, onSave }: any) {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]:
-        name === "object_id" || name === "owner_id" ? parseInt(value) : value,
+      [name]: name === "object_id" ? parseInt(value) : value,
     });
   };
 
-  const handleSubmit = () => {
-    onSave(formData, ticket.id); // include ticket ID for the PUT request
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      const res = await api.put(`/tickets/${ticket.id}`, formData);
+      onClose(res.data); // Return updated ticket
+    } catch (err) {
+      console.error("Failed to update ticket", err);
+    }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={() => onClose(null)} fullWidth maxWidth="sm">
       <DialogTitle>Edit Ticket</DialogTitle>
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 5, mt: 2, p: 3 }}
@@ -92,33 +93,24 @@ export default function EditTicketForm({ open, onClose, ticket, onSave }: any) {
           InputLabelProps={{ shrink: true }}
         />
         <TextField
-          name="status"
-          label="Status"
           select
+          label="Status"
+          name="status"
           value={formData.status}
           onChange={handleChange}
+          margin="dense"
           fullWidth
           variant="standard"
         >
-          {statuses.map((status) => (
-            <MenuItem key={status} value={status}>
-              {status}
+          {Object.values(TicketStatus).map((r) => (
+            <MenuItem key={r} value={r}>
+              {r}
             </MenuItem>
           ))}
         </TextField>
-        <TextField
-          name="owner_id"
-          label="Owner ID"
-          type="number"
-          value={formData.owner_id}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
-        {/* Add support for handler_ids as needed - e.g. multi-select */}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={() => onClose(null)}>Cancel</Button>
         <Button variant="contained" onClick={handleSubmit}>
           Save
         </Button>

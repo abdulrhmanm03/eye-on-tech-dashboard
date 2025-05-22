@@ -15,15 +15,8 @@ import { useEffect, useState } from "react";
 import api from "../axios_conf";
 import Confirm from "./Confirm";
 import EditAssetForm from "./EditAssetForm";
-import { useQueryClient } from "@tanstack/react-query";
 import AddComponentForm from "./AddComponentForm"; // create this component if not yetassetdt
 import EditComponentForm from "./EditComponentForm"; // create this component if not yet
-
-// You can also import this from wherever you defined it
-const updateAsset = async (id: number, asset: any) => {
-  const res = await api.put(`/assets/${id}`, asset);
-  return res.data;
-};
 
 type Props = {
   open: boolean;
@@ -40,8 +33,6 @@ export default function AssetDetails({ open, asset, onClose }: Props) {
   const [addComponentOpen, setAddComponentOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-
-  const queryClient = useQueryClient();
 
   const fetchComponents = async () => {
     try {
@@ -65,38 +56,6 @@ export default function AssetDetails({ open, asset, onClose }: Props) {
       onClose();
     } catch (err) {
       console.error("Failed to delete asset", err);
-    }
-  };
-
-  const handleEditAsset = async (updatedAsset: any, id: number) => {
-    try {
-      await updateAsset(id, updatedAsset);
-      queryClient.invalidateQueries(["assets"]);
-      setEditOpen(false);
-      fetchComponents();
-    } catch (err) {
-      console.error("Failed to update asset", err);
-    }
-  };
-
-  const handleEditComponent = async (updatedComponent: any) => {
-    try {
-      await api.put(`/components/${updatedComponent.id}`, updatedComponent);
-      await fetchComponents();
-    } catch (err) {
-      console.error("Failed to update component", err);
-    } finally {
-      setEditComponentOpen(false);
-      setSelectedComponent(null);
-    }
-  };
-
-  const handleAddComponent = async (newComponent: any) => {
-    try {
-      await api.post(`/components/create`, newComponent);
-      await fetchComponents();
-    } catch (err) {
-      console.error("Failed to add component", err);
     }
   };
 
@@ -212,12 +171,10 @@ export default function AssetDetails({ open, asset, onClose }: Props) {
         <EditAssetForm
           open={editOpen}
           asset={asset}
-          onClose={() => setEditOpen(false)}
-          onUpdated={() => {
+          onClose={() => {
             setEditOpen(false);
             fetchComponents();
           }}
-          onSave={handleEditAsset}
         />
       )}
 
@@ -229,7 +186,7 @@ export default function AssetDetails({ open, asset, onClose }: Props) {
             setEditComponentOpen(false);
             setSelectedComponent(null);
           }}
-          onSave={handleEditComponent}
+          onSuccess={fetchComponents} // ✅ now only refreshes after successful save
         />
       )}
 
@@ -237,7 +194,7 @@ export default function AssetDetails({ open, asset, onClose }: Props) {
         <AddComponentForm
           open={addComponentOpen}
           onClose={() => setAddComponentOpen(false)}
-          onSave={handleAddComponent}
+          onSave={fetchComponents} // Only fetch components, not save
           parentAssetId={asset.id}
         />
       )}

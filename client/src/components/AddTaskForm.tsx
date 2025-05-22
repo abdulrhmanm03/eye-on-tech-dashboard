@@ -9,24 +9,31 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useState } from "react";
-
-type TaskStatus = "In Progress" | "Completed";
+import api from "../axios_conf";
+import TaskStatus from "../enums/TaskStatus";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (task: any) => void;
-  ownerId: number;
+  onTaskCreated?: () => void; // callback to refresh task list
+  ticketId: number;
 };
 
-export default function AddTaskForm({ open, onClose, onSave, ownerId }: Props) {
+export default function AddTaskForm({
+  open,
+  onClose,
+  onTaskCreated,
+  ticketId,
+}: Props) {
   const [formData, setFormData] = useState({
     object_type: "",
     object_id: 0,
     description: "",
-    creation_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+    creation_date: new Date().toISOString().split("T")[0],
     status: "In Progress" as TaskStatus,
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -38,25 +45,37 @@ export default function AddTaskForm({ open, onClose, onSave, ownerId }: Props) {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setLoading(true);
     const taskPayload = {
-      owner_id: ownerId,
+      ticket_id: ticketId,
       ...formData,
     };
-    console.log(taskPayload);
-    onSave(taskPayload);
-    onClose();
+
+    try {
+      await api.post("/tasks/create/", taskPayload);
+      onTaskCreated?.(); // trigger callback to refetch tasks
+      handleClose(); // close and reset
+    } catch (err) {
+      console.error("Failed to add task", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
     setFormData({
       object_type: "",
       object_id: 0,
       description: "",
       creation_date: new Date().toISOString().split("T")[0],
-      status: "In Progress",
+      status: TaskStatus.in_progress,
     });
+    onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Add Task</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -101,16 +120,21 @@ export default function AddTaskForm({ open, onClose, onSave, ownerId }: Props) {
             value={formData.status}
             onChange={handleChange}
           >
-            <MenuItem value="In Progress">In Progress</MenuItem>
-            <MenuItem value="Completed">Completed</MenuItem>
+            {Object.values(TaskStatus).map((status) => (
+              <MenuItem key={status} value={status}>
+                {status}
+              </MenuItem>
+            ))}
           </TextField>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
           Save
         </Button>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleClose} disabled={loading}>
+          Cancel
+        </Button>
       </DialogActions>
     </Dialog>
   );

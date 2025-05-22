@@ -14,6 +14,7 @@ def get_password_hash(password):
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):

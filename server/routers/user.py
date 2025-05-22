@@ -1,96 +1,59 @@
 from typing import Dict
-from fastapi import APIRouter, Depends, HTTPException, Path, status 
+from fastapi import APIRouter, Depends, Path  
 from sqlalchemy.orm import Session
 from schemas import user as schemas
-from crud import user as crud
 from db import get_db
 from auth.utils import get_current_user
-from enums.user_role import UserRole
 from models.user import User
+from controllers import user as controller
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+@router.get("/{user_id}", response_model= schemas.UserRead)
+def get_user_by_id(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    return controller.get_user_by_id_controller(user_id, db, current_user)
+
 @router.post("/", response_model=schemas.UserRead)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), payload: dict = Depends(get_current_user)):
-    user_role = payload.get("role")
-    if user_role not in [UserRole.supervisor, UserRole.administrator]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to perform this action",
-            )
-    return crud.create_user(db, user)
+def create_user(
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    return controller.create_user_controller(user, db, current_user)
 
 @router.delete("/{user_id}", response_model=schemas.UserRead)
 def delete_user(
     user_id: int = Path(...),
     db: Session = Depends(get_db),
-    payload: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user)
 ):
-    user_role = payload.get("role")
-
-    if user_role != UserRole.supervisor:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only supervisors can delete users",
-        )
-
-    deleted_user = crud.delete_user(db, user_id)
-    if not deleted_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    return deleted_user
+    return controller.delete_user_controller(user_id, db, current_user)
 
 
 @router.put("/", response_model=schemas.UserRead)
 def update_user(
     user: schemas.UserRead,
     db: Session = Depends(get_db),
-    payload: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
-    user_role = payload.get("role")
-
-    if user_role not in [UserRole.supervisor, UserRole.administrator]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update users",
-        )
-
-    updated_user = crud.update_user(db, user_data=user)
-    if not updated_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    return updated_user
+    return controller.update_user_controller(user, db, current_user)
 
 @router.get("/", response_model=list[schemas.UserRead])
 def list_users(db: Session = Depends(get_db)):
-    return crud.get_users(db)
+    return controller.list_users_controller(db)
 
 @router.post("/reset_password/{id}", response_model=schemas.UserRead)
 def reset_password(id: int, db: Session = Depends(get_db), current_user : User = Depends(get_current_user)):
-    user_role = current_user.get("role")
+    return controller.reset_password_controller(id, db, current_user)
 
-    if user_role not in [UserRole.supervisor, UserRole.administrator]:
-        user_id = current_user.get("id")
-        if user_id != id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to update users",
-            )
-    user = crud.reset_user_password(db, id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
-
-    return user
-        
-
-
+@router.post("/change_password/", response_model=schemas.UserRead)
+def change_password(
+        payload: schemas.ChangePassword,
+        db: Session = Depends(get_db),
+        current_user : User = Depends(get_current_user)
+):
+    return controller.change_password_controller(payload, db, current_user)

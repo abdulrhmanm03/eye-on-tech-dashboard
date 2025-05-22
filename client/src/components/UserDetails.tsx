@@ -18,6 +18,7 @@ import EditUserForm from "./EditUserForm";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useQueryClient } from "@tanstack/react-query";
+import ResetPasswordButton from "./ResetPawordButton";
 
 type Props = {
   open: boolean;
@@ -35,6 +36,17 @@ export default function UserDetails({ open, user, onClose }: Props) {
   const [confirmUserDeleteOpen, setConfirmUserDeleteOpen] = useState(false);
   const [confirmPocDeleteOpen, setConfirmPocDeleteOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [userData, setUserData] = useState(user);
+
+  const fetchUser = async () => {
+    try {
+      const res = await api.get(`/users/${user.id}`);
+      return res.data;
+    } catch (err) {
+      console.error("Failed to fetch user", err);
+      return user;
+    }
+  };
 
   const fetchPocs = async () => {
     try {
@@ -51,28 +63,8 @@ export default function UserDetails({ open, user, onClose }: Props) {
     }
   }, [user]);
 
-  const handleAddPoc = async (newPoc: any) => {
-    try {
-      await api.post(`/pocs/user/${user.id}`, newPoc);
-      await fetchPocs();
-    } catch (err) {
-      console.error("Failed to add PoC", err);
-    }
-  };
-
-  const handleEditPoc = async (updatedPoc: any) => {
-    try {
-      await api.put(`/pocs/${updatedPoc.id}`, {
-        ...updatedPoc,
-        user_id: user.id,
-      });
-      await fetchPocs();
-    } catch (err) {
-      console.error("Failed to update PoC", err);
-    } finally {
-      setEditPocOpen(false);
-      setSelectedPoc(null);
-    }
+  const handleAddPoc = async () => {
+    await fetchPocs();
   };
 
   const handleDeletePoc = async () => {
@@ -99,17 +91,6 @@ export default function UserDetails({ open, user, onClose }: Props) {
     }
   };
 
-  const handleSaveUser = async (updatedUser: any) => {
-    try {
-      await api.put("/users", updatedUser);
-      queryClient.invalidateQueries(["users"]);
-      setEditUserOpen(false);
-      setSelectedUser(null);
-    } catch (err) {
-      console.error("Failed to update user", err);
-    }
-  };
-
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -133,7 +114,9 @@ export default function UserDetails({ open, user, onClose }: Props) {
         </DialogTitle>
 
         <DialogContent dividers>
-          <Typography variant="subtitle1">Username: {user.username}</Typography>
+          <Typography variant="subtitle1">
+            Username: {userData.username}
+          </Typography>
 
           <Typography variant="h6" sx={{ mt: 3 }}>
             Points of Contact
@@ -189,10 +172,17 @@ export default function UserDetails({ open, user, onClose }: Props) {
           )}
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setAddPocOpen(true)} variant="contained">
-            Add Point of Contact
-          </Button>
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Box>
+            <Button
+              onClick={() => setAddPocOpen(true)}
+              variant="contained"
+              sx={{ mr: 2 }}
+            >
+              Add Point of Contact
+            </Button>
+            <ResetPasswordButton userId={userData.id} />
+          </Box>
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </Dialog>
@@ -202,10 +192,9 @@ export default function UserDetails({ open, user, onClose }: Props) {
         open={addPocOpen}
         onClose={() => setAddPocOpen(false)}
         onSave={handleAddPoc}
-        userId={user.id}
+        userId={userData.id}
       />
 
-      {/* Edit PoC */}
       {selectedPoc && (
         <EditPocForm
           open={editPocOpen}
@@ -214,7 +203,9 @@ export default function UserDetails({ open, user, onClose }: Props) {
             setEditPocOpen(false);
             setSelectedPoc(null);
           }}
-          onSave={handleEditPoc}
+          onSuccess={async () => {
+            await fetchPocs();
+          }}
         />
       )}
 
@@ -234,11 +225,12 @@ export default function UserDetails({ open, user, onClose }: Props) {
         <EditUserForm
           open={editUserOpen}
           user={selectedUser}
-          onClose={() => {
+          onClose={async () => {
+            const updated = await fetchUser();
+            setUserData(updated);
             setEditUserOpen(false);
             setSelectedUser(null);
           }}
-          onSave={handleSaveUser}
         />
       )}
 

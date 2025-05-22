@@ -7,14 +7,12 @@ import {
   Button,
   TextField,
   MenuItem,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import AssetStatus from "../enums/AssetStatus"; // Adjust path as needed
-
-interface CreateAssetFormProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: AssetFormData) => void;
-}
+import AssetStatus from "../enums/AssetStatus";
+import api from "../axios_conf";
+import { useMutation } from "@tanstack/react-query";
 
 export interface AssetFormData {
   type: string;
@@ -35,28 +33,48 @@ export interface AssetFormData {
   owner_id: number;
 }
 
-const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
-  open,
-  onClose,
-  onSubmit,
-}) => {
+interface CreateAssetFormProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
+  const today = new Date();
+  const threeMonthsLater = new Date();
+  threeMonthsLater.setMonth(today.getMonth() + 3);
+
   const [form, setForm] = useState<AssetFormData>({
     type: "",
     tag: "",
     model: "",
     serial_number: "",
-    production_year: new Date().getFullYear(),
+    production_year: today.getFullYear(),
     chassis_number: "",
     plate_number: "",
     location: "",
     geolocation: "",
     note: "",
-    status: AssetStatus.active,
+    status: AssetStatus.working,
     warranty_expiry: "",
     maintenance_expiry: "",
-    last_service: "",
-    next_service: "",
-    owner_id: 1, // Default owner ID, replace as needed
+    last_service: today.toISOString().split("T")[0], // ✅ today's date
+    next_service: threeMonthsLater.toISOString().split("T")[0], // ✅ +3 months
+    owner_id: 1,
+  });
+
+  const createAssetRequest = async (data: AssetFormData) => {
+    const res = await api.post("/assets/create", data);
+    return res.data;
+  };
+
+  const { mutate: createAsset, isError } = useMutation({
+    mutationFn: createAssetRequest,
+    onSuccess: () => {
+      onClose(); // Close dialog on success
+    },
+    onError: (err) => {
+      console.error("Failed to create asset:", err);
+    },
   });
 
   const handleChange = (
@@ -67,8 +85,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
   };
 
   const handleSubmit = () => {
-    onSubmit(form);
-    onClose();
+    createAsset(form);
   };
 
   return (
@@ -77,6 +94,9 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2, p: 3 }}
       >
+        {isError && (
+          <Alert severity="error">Failed to create asset. Try again.</Alert>
+        )}
         <TextField
           label="Type"
           name="type"
@@ -194,7 +214,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSubmit} variant="contained">
-          Create
+          <CircularProgress size={24} />
         </Button>
       </DialogActions>
     </Dialog>

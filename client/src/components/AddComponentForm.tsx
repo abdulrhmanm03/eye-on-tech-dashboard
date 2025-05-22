@@ -9,35 +9,21 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useState } from "react";
-
-type AssetStatus = "Working" | "Faulty" | "Partially Working" | "RMA";
-
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (component: any) => void;
-  parentAssetId: number;
-};
-
-const statusOptions: AssetStatus[] = [
-  "Working",
-  "Faulty",
-  "Partially Working",
-  "RMA",
-];
+import AssetStatus from "../enums/AssetStatus";
+import api from "../axios_conf"; // Make sure to import this
 
 export default function AddComponentForm({
   open,
   onClose,
   onSave,
   parentAssetId,
-}: Props) {
+}: any) {
   const [formData, setFormData] = useState({
     type: "",
     model: "",
     serial_number: "",
     production_year: new Date().getFullYear(),
-    status: "Active" as AssetStatus,
+    status: "Working" as AssetStatus,
     last_service: new Date().toISOString().split("T")[0],
     next_service: new Date().toISOString().split("T")[0],
   });
@@ -50,22 +36,28 @@ export default function AddComponentForm({
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const payload = {
       ...formData,
       parent_asset_id: parentAssetId,
     };
-    onSave(payload);
-    onClose();
-    setFormData({
-      type: "",
-      model: "",
-      serial_number: "",
-      production_year: new Date().getFullYear(),
-      status: "Active",
-      last_service: new Date().toISOString().split("T")[0],
-      next_service: new Date().toISOString().split("T")[0],
-    });
+    try {
+      await api.post(`/components/create`, payload);
+      onSave(); // Inform parent to refresh
+      onClose(); // Close dialog
+      // Reset form
+      setFormData({
+        type: "",
+        model: "",
+        serial_number: "",
+        production_year: new Date().getFullYear(),
+        status: AssetStatus.working,
+        last_service: new Date().toISOString().split("T")[0],
+        next_service: new Date().toISOString().split("T")[0],
+      });
+    } catch (err) {
+      console.error("Failed to add component", err);
+    }
   };
 
   return (
@@ -110,7 +102,7 @@ export default function AddComponentForm({
             value={formData.status}
             onChange={handleChange}
           >
-            {statusOptions.map((status) => (
+            {Object.values(AssetStatus).map((status) => (
               <MenuItem key={status} value={status}>
                 {status}
               </MenuItem>

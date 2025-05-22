@@ -18,6 +18,7 @@ import EditTicketForm from "./EditTicketForm";
 import EditTaskForm from "./EditTaskForm"; // Assuming this is similar to EditPocForm
 import { useQueryClient } from "@tanstack/react-query";
 import AddTaskForm from "./AddTaskForm";
+import AddReportForm from "./AddReportForm";
 
 type Props = {
   open: boolean;
@@ -33,10 +34,16 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [confirmTaskDeleteOpen, setConfirmTaskDeleteOpen] = useState(false);
+  const [currentTicket, setCurrentTicket] = useState(ticket); // local editable ticket state
+  const [addReportOpen, setAddReportOpen] = useState(false);
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setCurrentTicket(ticket); // update local state when prop changes
+  }, [ticket]);
 
   const fetchTasks = async () => {
     try {
@@ -61,42 +68,6 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
       onClose();
     } catch (err) {
       console.error("Failed to delete ticket", err);
-    }
-  };
-
-  const handleEditTicket = async (updatedTicket: any, id: number) => {
-    try {
-      await api.put(`/tickets/${id}`, updatedTicket);
-      queryClient.invalidateQueries(["tickets"]);
-      setEditTaskOpen(false);
-      setSelectedTask(null);
-      onClose();
-    } catch (err) {
-      console.error("Failed to update ticket", err);
-    }
-  };
-
-  const handleEditTask = async (updatedTask: any) => {
-    try {
-      await api.put(`/tasks/${updatedTask.id}`, {
-        ...updatedTask,
-        ticket_id: ticket.id,
-      });
-      await fetchTasks();
-    } catch (err) {
-      console.error("Failed to update task", err);
-    } finally {
-      setEditTaskOpen(false);
-      setSelectedTask(null);
-    }
-  };
-
-  const handleAddTask = async (newTask: any) => {
-    try {
-      await api.post(`/tasks/create/`, newTask);
-      await fetchTasks();
-    } catch (err) {
-      console.error("Failed to add task", err);
     }
   };
 
@@ -133,9 +104,9 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         </DialogTitle>
 
         <DialogContent dividers>
-          <Typography variant="subtitle1">Title: {ticket.title}</Typography>
+          <Typography variant="subtitle1">Id: {currentTicket.id}</Typography>
           <Typography variant="body2">
-            Description: {ticket.description}
+            Description: {currentTicket.description}
           </Typography>
 
           <Typography variant="h6" sx={{ mt: 3 }}>
@@ -155,7 +126,7 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
                 }}
               >
                 <Typography variant="subtitle2">Task {index + 1}</Typography>
-                <Typography variant="body2">• Title: {task.title}</Typography>
+                <Typography variant="body2">• Id: {task.id}</Typography>
                 <Typography variant="body2">• Status: {task.status}</Typography>
 
                 <Box sx={{ position: "absolute", top: 0, right: 0 }}>
@@ -185,6 +156,9 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         </DialogContent>
 
         <DialogActions>
+          <Button onClick={() => setAddReportOpen(true)} variant="outlined">
+            Add Report
+          </Button>
           <Button onClick={() => setAddTaskOpen(true)} variant="contained">
             Add Task
           </Button>
@@ -203,26 +177,26 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         <AddTaskForm
           open={addTaskOpen}
           onClose={() => setAddTaskOpen(false)}
-          onSave={handleAddTask}
-          ownerId={ticket.id}
+          onTaskCreated={fetchTasks} // refetch tasks after add
+          ticketId={ticket.id}
         />
       )}
 
-      {/* Edit Ticket */}
       {editTicketOpen && (
         <EditTicketForm
           open={editTicketOpen}
-          ticket={ticket}
-          onClose={() => setEditTicketOpen(false)}
-          onUpdated={() => {
+          ticket={currentTicket}
+          onClose={(updatedTicket: any) => {
             setEditTicketOpen(false);
-            fetchTasks(); // refresh tasks if needed
+            if (updatedTicket) {
+              setCurrentTicket(updatedTicket); // update local ticket
+              queryClient.invalidateQueries(["tickets"]); // optional, if you use cached queries
+              fetchTasks(); // in case description changes warrant task refresh
+            }
           }}
-          onSave={handleEditTicket}
         />
       )}
 
-      {/* Edit Task */}
       {selectedTask && (
         <EditTaskForm
           open={editTaskOpen}
@@ -231,10 +205,21 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
             setEditTaskOpen(false);
             setSelectedTask(null);
           }}
-          onSave={handleEditTask}
+          onSuccess={fetchTasks} // refetch after edit
         />
       )}
 
+      {addReportOpen && (
+        <AddReportForm
+          open={addReportOpen}
+          onClose={() => setAddReportOpen(false)}
+          ticketId={ticket.id}
+          onReportCreated={() => {
+            // Optional: you can implement report fetching here if you decide to show reports
+            setAddReportOpen(false);
+          }}
+        />
+      )}
       {/* Confirm Delete Task */}
       <Confirm
         open={confirmTaskDeleteOpen}

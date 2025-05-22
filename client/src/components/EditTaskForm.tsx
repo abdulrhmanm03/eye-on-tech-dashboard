@@ -8,27 +8,31 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import dayjs, { Dayjs } from "dayjs";
-
-// Status options (match your TaskStatus enum)
-const statuses = ["Pending", "In Progress", "Completed"];
+import dayjs from "dayjs";
+import api from "../axios_conf";
+import TaskStatus from "../enums/TaskStatus";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   task: any;
-  onSave: (updatedTask: any) => void;
+  onSuccess?: () => void; // optional refetch callback
 };
 
-export default function EditTaskForm({ open, onClose, task, onSave }: Props) {
+export default function EditTaskForm({
+  open,
+  onClose,
+  task,
+  onSuccess,
+}: Props) {
   const [formData, setFormData] = useState({
-    object_type: task.object_type || "",
-    object_id: task.object_id || 0,
-    description: task.description || "",
-    creation_date: dayjs(task.creation_date),
-    status: task.status || "Pending",
-    owner_id: task.owner_id,
-    id: task.id,
+    object_type: "",
+    object_id: 0,
+    description: "",
+    creation_date: dayjs(),
+    status: "Pending",
+    owner_id: null,
+    id: null,
   });
 
   useEffect(() => {
@@ -49,14 +53,7 @@ export default function EditTaskForm({ open, onClose, task, onSave }: Props) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleDateChange = (newDate: Dayjs | null) => {
-    if (newDate) {
-      setFormData({ ...formData, creation_date: newDate });
-    }
-  };
-
-  const handleSubmit = () => {
-    // Format data to match backend schema (ISO string date)
+  const handleSubmit = async () => {
     const payload = {
       object_type: formData.object_type,
       object_id: Number(formData.object_id),
@@ -66,8 +63,14 @@ export default function EditTaskForm({ open, onClose, task, onSave }: Props) {
       owner_id: formData.owner_id,
       id: formData.id,
     };
-    onSave(payload);
-    onClose();
+
+    try {
+      await api.put(`/tasks/${formData.id}`, payload);
+      onSuccess?.(); // trigger refetch if needed
+      onClose();
+    } catch (err) {
+      console.error("Failed to update task", err);
+    }
   };
 
   return (
@@ -107,12 +110,12 @@ export default function EditTaskForm({ open, onClose, task, onSave }: Props) {
           name="creation_date"
           label="Creation Date"
           type="date"
-          value={formData.creation_date}
-          onChange={handleChange}
+          value={formData.creation_date.format("YYYY-MM-DD")}
+          onChange={(e) =>
+            setFormData({ ...formData, creation_date: dayjs(e.target.value) })
+          }
           fullWidth
-          InputLabelProps={{
-            shrink: true,
-          }}
+          InputLabelProps={{ shrink: true }}
           variant="standard"
         />
         <TextField
@@ -124,7 +127,7 @@ export default function EditTaskForm({ open, onClose, task, onSave }: Props) {
           fullWidth
           variant="standard"
         >
-          {statuses.map((status) => (
+          {Object.values(TaskStatus).map((status) => (
             <MenuItem key={status} value={status}>
               {status}
             </MenuItem>

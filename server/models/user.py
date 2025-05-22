@@ -14,4 +14,3 @@ class User(Base):
     contacts = relationship("PointOfContact", back_populates="user", cascade="all, delete-orphan")
     assets = relationship("Asset", back_populates="owner", cascade="all, delete-orphan")
     tickets = relationship("Ticket", back_populates="owner", cascade="all, delete-orphan")
-    tasks = relationship("Task", back_populates="owner", cascade="all, delete-orphan")

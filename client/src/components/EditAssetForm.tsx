@@ -9,8 +9,12 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import AssetStatus from "../enums/AssetStatus";
+import api from "../axios_conf";
+import { useQueryClient } from "@tanstack/react-query";
 
-export default function EditAssetForm({ open, onClose, asset, onSave }: any) {
+export default function EditAssetForm({ open, onClose, asset }: any) {
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
     type: "",
     tag: "",
@@ -32,12 +36,25 @@ export default function EditAssetForm({ open, onClose, asset, onSave }: any) {
 
   useEffect(() => {
     if (asset) {
+      const today = new Date();
+      const defaultLastService = asset.last_service
+        ? new Date(asset.last_service)
+        : today;
+
+      const defaultNextService = asset.next_service
+        ? new Date(asset.next_service)
+        : new Date(defaultLastService.getTime());
+
+      if (!asset.next_service) {
+        defaultNextService.setMonth(defaultNextService.getMonth() + 3);
+      }
+
       setFormData({
         type: asset.type || "",
         tag: asset.tag || "",
         model: asset.model || "",
         serial_number: asset.serial_number || "",
-        production_year: asset.production_year || new Date().getFullYear(),
+        production_year: asset.production_year || today.getFullYear(),
         chassis_number: asset.chassis_number || "",
         plate_number: asset.plate_number || "",
         location: asset.location || "",
@@ -46,8 +63,8 @@ export default function EditAssetForm({ open, onClose, asset, onSave }: any) {
         status: asset.status || "Operational",
         warranty_expiry: asset.warranty_expiry?.split("T")[0] || "",
         maintenance_expiry: asset.maintenance_expiry?.split("T")[0] || "",
-        last_service: asset.last_service?.split("T")[0] || "",
-        next_service: asset.next_service?.split("T")[0] || "",
+        last_service: defaultLastService.toISOString().split("T")[0],
+        next_service: defaultNextService.toISOString().split("T")[0],
         owner_id: asset.owner_id || 0,
       });
     }
@@ -64,9 +81,14 @@ export default function EditAssetForm({ open, onClose, asset, onSave }: any) {
     });
   };
 
-  const handleSubmit = () => {
-    onSave(formData, asset.id);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      await api.put(`/assets/${asset.id}`, formData);
+      queryClient.invalidateQueries(["assets"]);
+      onClose();
+    } catch (error) {
+      console.error("Failed to update asset", error);
+    }
   };
 
   return (

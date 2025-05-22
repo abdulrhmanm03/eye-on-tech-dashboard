@@ -8,16 +8,18 @@ import {
   Box,
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import api from "../axios_conf";
 
 type Props = {
   open: boolean;
   poc: any;
   onClose: () => void;
-  onSave: (updatedPoc: any) => void;
+  onSuccess: () => void;
 };
 
-export default function EditPocForm({ open, poc, onClose, onSave }: Props) {
+export default function EditPocForm({ open, poc, onClose, onSuccess }: Props) {
   const [form, setForm] = useState(poc);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setForm(poc);
@@ -27,8 +29,17 @@ export default function EditPocForm({ open, poc, onClose, onSave }: Props) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    onSave(form);
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/pocs/${form.id}`, form);
+      onSuccess(); // notify parent to refresh data
+      onClose(); // close dialog
+    } catch (err) {
+      console.error("Failed to update PoC", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,8 +74,8 @@ export default function EditPocForm({ open, poc, onClose, onSave }: Props) {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleSubmit} variant="contained">
-          Save
+        <Button onClick={handleSubmit} variant="contained" disabled={saving}>
+          {saving ? "Saving..." : "Save"}
         </Button>
         <Button onClick={onClose}>Cancel</Button>
       </DialogActions>

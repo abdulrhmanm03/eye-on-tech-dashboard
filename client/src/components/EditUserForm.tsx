@@ -8,23 +8,24 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import api from "../axios_conf";
+import UserRole from "../enums/UserRoles";
 
-const roles = ["Client", "Supervisor", "Administrator"];
-
-export default function EditUserForm({ open, onClose, user, onSave }: any) {
+export default function EditUserForm({ open, onClose, user }: any) {
   const [formData, setFormData] = useState({
     id: user.id,
     username: user.username,
-    password: "1234",
     role: "Client",
   });
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (user) {
       setFormData({
         id: user.id,
         username: user.username || "",
-        password: user.password || "",
         role: user.role || "Client",
       });
     }
@@ -34,18 +35,18 @@ export default function EditUserForm({ open, onClose, user, onSave }: any) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    onSave({ ...formData });
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      await api.put("/users", formData);
+      queryClient.invalidateQueries(["users"]);
+      onClose();
+    } catch (err) {
+      console.error("Failed to update user", err);
+    }
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="sm" // Make it same size as CreateUserForm
-    >
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Edit User</DialogTitle>
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 5, mt: 2, p: 3 }}
@@ -59,15 +60,6 @@ export default function EditUserForm({ open, onClose, user, onSave }: any) {
           variant="standard"
         />
         <TextField
-          name="password"
-          label="Password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
-        <TextField
           name="role"
           label="Role"
           select
@@ -76,7 +68,7 @@ export default function EditUserForm({ open, onClose, user, onSave }: any) {
           fullWidth
           variant="standard"
         >
-          {roles.map((role) => (
+          {Object.values(UserRole).map((role) => (
             <MenuItem key={role} value={role}>
               {role}
             </MenuItem>

@@ -8,35 +8,42 @@ import {
   TextField,
   MenuItem,
 } from "@mui/material";
+import UserRole from "../enums/UserRoles";
+import api from "../axios_conf";
+import { useMutation } from "@tanstack/react-query";
 
 interface CreateUserDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (username: string, password: string, role: string) => void;
 }
 
-const roles = [
-  "Supervisor",
-  "Administrator",
-  "Engineer",
-  "Technician",
-  "Client",
-];
-
-const CreateUserForm: React.FC<CreateUserDialogProps> = ({
-  open,
-  onClose,
-  onSubmit,
+const createUserRequest = async (credentials: {
+  username: string;
+  role: string;
 }) => {
+  const res = await api.post("/users", credentials);
+  return res.data;
+};
+
+const CreateUserForm: React.FC<CreateUserDialogProps> = ({ open, onClose }) => {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
 
+  const Mutation = useMutation({
+    mutationFn: createUserRequest,
+    onError: (error) => {
+      console.error("Failed to create user:", error);
+    },
+  });
+
+  const handleCreateUser = (username: string, role: string) => {
+    Mutation.mutate({ username, role });
+  };
+
   const handleSubmit = () => {
-    if (username && password && role) {
-      onSubmit(username, password, role);
+    if (username && role) {
+      handleCreateUser(username, role);
       setUsername("");
-      setPassword("");
       setRole("");
       onClose();
     }
@@ -61,14 +68,6 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           variant="standard"
         />
         <TextField
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          fullWidth
-          variant="standard"
-        />
-        <TextField
           select
           label="Role"
           value={role}
@@ -76,7 +75,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           fullWidth
           variant="standard"
         >
-          {roles.map((r) => (
+          {Object.values(UserRole).map((r) => (
             <MenuItem key={r} value={r}>
               {r}
             </MenuItem>

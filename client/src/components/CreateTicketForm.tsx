@@ -1,4 +1,3 @@
-// src/components/CreateTicketDialog.tsx
 import {
   Dialog,
   DialogTitle,
@@ -6,9 +5,11 @@ import {
   DialogActions,
   TextField,
   Button,
+  MenuItem,
 } from "@mui/material";
 import { useState } from "react";
 import api from "../axios_conf";
+import TicketStatus from "../enums/TicketStatus";
 
 export default function CreateTicketForm({
   open,
@@ -23,7 +24,6 @@ export default function CreateTicketForm({
     description: "",
     creation_date: "",
     status: "open",
-    owner_id: "",
     handler_ids: "",
   });
 
@@ -37,7 +37,6 @@ export default function CreateTicketForm({
       const payload = {
         ...formData,
         object_id: Number(formData.object_id),
-        owner_id: Number(formData.owner_id),
         handler_ids: formData.handler_ids
           .split(",")
           .map((id) => Number(id.trim())),
@@ -85,19 +84,20 @@ export default function CreateTicketForm({
           margin="dense"
         />
         <TextField
-          fullWidth
+          select
           label="Status"
           name="status"
           onChange={handleChange}
           margin="dense"
-        />
-        <TextField
           fullWidth
-          label="Owner ID"
-          name="owner_id"
-          onChange={handleChange}
-          margin="dense"
-        />
+          variant="standard"
+        >
+          {Object.values(TicketStatus).map((r) => (
+            <MenuItem key={r} value={r}>
+              {r}
+            </MenuItem>
+          ))}
+        </TextField>
         <TextField
           fullWidth
           label="Handler IDs (comma-separated)"

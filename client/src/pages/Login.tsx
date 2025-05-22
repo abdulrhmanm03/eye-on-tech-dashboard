@@ -29,13 +29,15 @@ export default function LoginForm() {
 
   const mutation = useMutation({
     mutationFn: loginRequest,
+    // components/LoginForm.tsx (your LoginForm)
     onSuccess: (data) => {
-      login(data.access_token);
-      console.log("works");
+      login({
+        token: data.access_token,
+        username: data.username,
+        role: data.role,
+        id: data.id,
+      });
       navigate("/home");
-    },
-    onError: (error) => {
-      console.error("Login failed:", error);
     },
   });
 

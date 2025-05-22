@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
+import api from "../axios_conf";
 
 type AssetStatus = "Working" | "Faulty" | "Partially Working" | "RMA";
 
@@ -16,7 +17,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   component: any;
-  onSave: (updatedComponent: any) => void;
+  onSuccess: () => void; // replaces onSave
 };
 
 const statusOptions: AssetStatus[] = [
@@ -30,7 +31,7 @@ export default function EditComponentForm({
   open,
   onClose,
   component,
-  onSave,
+  onSuccess,
 }: Props) {
   const [formData, setFormData] = useState({
     id: component.id,
@@ -39,7 +40,7 @@ export default function EditComponentForm({
     model: component.model || "",
     serial_number: component.serial_number || "",
     production_year: component.production_year || new Date().getFullYear(),
-    status: component.status || "Active",
+    status: component.status || "Working",
     last_service: dayjs(component.last_service),
     next_service: dayjs(component.next_service),
   });
@@ -62,20 +63,26 @@ export default function EditComponentForm({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: name === "production_year" ? Number(value) : value,
-    });
+    }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const payload = {
       ...formData,
       last_service: formData.last_service.format("YYYY-MM-DD"),
       next_service: formData.next_service.format("YYYY-MM-DD"),
     };
-    onSave(payload);
-    onClose();
+
+    try {
+      await api.put(`/components/${formData.id}`, payload);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Failed to update component", err);
+    }
   };
 
   return (
@@ -137,7 +144,12 @@ export default function EditComponentForm({
           label="Last Service"
           type="date"
           value={formData.last_service.format("YYYY-MM-DD")}
-          onChange={handleChange}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              last_service: dayjs(e.target.value),
+            }))
+          }
           fullWidth
           InputLabelProps={{ shrink: true }}
           variant="standard"
@@ -147,7 +159,12 @@ export default function EditComponentForm({
           label="Next Service"
           type="date"
           value={formData.next_service.format("YYYY-MM-DD")}
-          onChange={handleChange}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              next_service: dayjs(e.target.value),
+            }))
+          }
           fullWidth
           InputLabelProps={{ shrink: true }}
           variant="standard"

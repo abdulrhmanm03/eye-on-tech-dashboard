@@ -18,7 +18,7 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100) -> list[Task]:
 def get_ticket_tasks(db: Session, ticket_id: int, skip: int = 0, limit: int = 100) -> list[Task]:
     return (
         db.query(Task)
-        .filter(Task.owner_id == ticket_id)
+        .filter(Task.ticket_id == ticket_id)
         .offset(skip)
         .limit(limit)
         .all()
