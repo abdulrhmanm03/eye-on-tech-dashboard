@@ -7,7 +7,6 @@ import {
   Button,
   TextField,
   MenuItem,
-  CircularProgress,
   Alert,
 } from "@mui/material";
 import AssetStatus from "../enums/AssetStatus";
@@ -36,9 +35,14 @@ export interface AssetFormData {
 interface CreateAssetFormProps {
   open: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
+const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
+  open,
+  onClose,
+  onCreated,
+}) => {
   const today = new Date();
   const threeMonthsLater = new Date();
   threeMonthsLater.setMonth(today.getMonth() + 3);
@@ -57,8 +61,8 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
     status: AssetStatus.working,
     warranty_expiry: "",
     maintenance_expiry: "",
-    last_service: today.toISOString().split("T")[0], // ✅ today's date
-    next_service: threeMonthsLater.toISOString().split("T")[0], // ✅ +3 months
+    last_service: today.toISOString().split("T")[0],
+    next_service: threeMonthsLater.toISOString().split("T")[0],
     owner_id: 1,
   });
 
@@ -70,7 +74,8 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
   const { mutate: createAsset, isError } = useMutation({
     mutationFn: createAssetRequest,
     onSuccess: () => {
-      onClose(); // Close dialog on success
+      onClose();
+      onCreated?.();
     },
     onError: (err) => {
       console.error("Failed to create asset:", err);
@@ -84,7 +89,22 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
     setForm({ ...form, [name]: value });
   };
 
+  const isFormValid =
+    form.type.trim() !== "" &&
+    form.tag.trim() !== "" &&
+    form.model.trim() !== "" &&
+    form.serial_number.trim() !== "" &&
+    String(form.production_year).trim() !== "" &&
+    form.location.trim() !== "" &&
+    form.geolocation.trim() !== "" &&
+    form.warranty_expiry.trim() !== "" &&
+    form.maintenance_expiry.trim() !== "" &&
+    form.last_service.trim() !== "" &&
+    form.next_service.trim() !== "" &&
+    String(form.owner_id).trim() !== "";
+
   const handleSubmit = () => {
+    if (!isFormValid) return;
     createAsset(form);
   };
 
@@ -98,30 +118,35 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           <Alert severity="error">Failed to create asset. Try again.</Alert>
         )}
         <TextField
+          required
           label="Type"
           name="type"
           value={form.type}
           onChange={handleChange}
         />
         <TextField
+          required
           label="Tag"
           name="tag"
           value={form.tag}
           onChange={handleChange}
         />
         <TextField
+          required
           label="Model"
           name="model"
           value={form.model}
           onChange={handleChange}
         />
         <TextField
+          required
           label="Serial Number"
           name="serial_number"
           value={form.serial_number}
           onChange={handleChange}
         />
         <TextField
+          required
           label="Production Year"
           name="production_year"
           type="number"
@@ -141,12 +166,14 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           onChange={handleChange}
         />
         <TextField
+          required
           label="Location"
           name="location"
           value={form.location}
           onChange={handleChange}
         />
         <TextField
+          required
           label="Geolocation"
           name="geolocation"
           value={form.geolocation}
@@ -172,6 +199,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           ))}
         </TextField>
         <TextField
+          required
           label="Warranty Expiry"
           name="warranty_expiry"
           type="date"
@@ -180,6 +208,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           InputLabelProps={{ shrink: true }}
         />
         <TextField
+          required
           label="Maintenance Expiry"
           name="maintenance_expiry"
           type="date"
@@ -188,6 +217,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           InputLabelProps={{ shrink: true }}
         />
         <TextField
+          required
           label="Last Service"
           name="last_service"
           type="date"
@@ -196,6 +226,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           InputLabelProps={{ shrink: true }}
         />
         <TextField
+          required
           label="Next Service"
           name="next_service"
           type="date"
@@ -204,6 +235,7 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
           InputLabelProps={{ shrink: true }}
         />
         <TextField
+          required
           label="Owner ID"
           name="owner_id"
           type="number"
@@ -213,8 +245,12 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({ open, onClose }) => {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          <CircularProgress size={24} />
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={!isFormValid}
+        >
+          Create
         </Button>
       </DialogActions>
     </Dialog>

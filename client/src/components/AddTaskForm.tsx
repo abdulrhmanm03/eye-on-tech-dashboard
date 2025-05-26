@@ -27,7 +27,7 @@ export default function AddTaskForm({
 }: Props) {
   const [formData, setFormData] = useState({
     object_type: "",
-    object_id: 0,
+    object_id: "",
     description: "",
     creation_date: new Date().toISOString().split("T")[0],
     status: "In Progress" as TaskStatus,
@@ -41,7 +41,7 @@ export default function AddTaskForm({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "object_id" ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -66,7 +66,7 @@ export default function AddTaskForm({
   const handleClose = () => {
     setFormData({
       object_type: "",
-      object_id: 0,
+      object_id: "",
       description: "",
       creation_date: new Date().toISOString().split("T")[0],
       status: TaskStatus.in_progress,
@@ -89,7 +89,6 @@ export default function AddTaskForm({
           <TextField
             name="object_id"
             label="Object ID"
-            type="number"
             fullWidth
             value={formData.object_id}
             onChange={handleChange}

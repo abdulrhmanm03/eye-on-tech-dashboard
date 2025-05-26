@@ -14,17 +14,18 @@ import TicketStatus from "../enums/TicketStatus";
 export default function CreateTicketForm({
   open,
   onClose,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }) {
   const [formData, setFormData] = useState({
     object_type: "",
     object_id: "",
     description: "",
-    creation_date: "",
+    creation_date: new Date().toISOString().split("T")[0],
     status: "open",
-    handler_ids: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,20 +33,26 @@ export default function CreateTicketForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const isFormValid =
+    formData.object_type.trim() !== "" &&
+    formData.object_id.trim() !== "" &&
+    formData.description.trim() !== "" &&
+    formData.creation_date.trim() !== "" &&
+    formData.status.trim() !== "";
+
   const handleSubmit = async () => {
+    if (!isFormValid) return;
     try {
       const payload = {
         ...formData,
         object_id: Number(formData.object_id),
-        handler_ids: formData.handler_ids
-          .split(",")
-          .map((id) => Number(id.trim())),
         creation_date: new Date(formData.creation_date)
           .toISOString()
-          .split("T")[0], // Ensure it's just the date
+          .split("T")[0],
       };
       await api.post("/tickets/create", payload);
       onClose();
+      onCreated?.();
     } catch (error) {
       console.error("Failed to create ticket:", error);
     }
@@ -61,6 +68,7 @@ export default function CreateTicketForm({
           name="object_type"
           onChange={handleChange}
           margin="dense"
+          required
         />
         <TextField
           fullWidth
@@ -68,6 +76,7 @@ export default function CreateTicketForm({
           name="object_id"
           onChange={handleChange}
           margin="dense"
+          required
         />
         <TextField
           fullWidth
@@ -75,22 +84,27 @@ export default function CreateTicketForm({
           name="description"
           onChange={handleChange}
           margin="dense"
+          required
         />
         <TextField
           fullWidth
           type="date"
           name="creation_date"
+          value={formData.creation_date}
           onChange={handleChange}
           margin="dense"
+          required
         />
         <TextField
           select
           label="Status"
           name="status"
+          value={formData.status}
           onChange={handleChange}
           margin="dense"
           fullWidth
           variant="standard"
+          required
         >
           {Object.values(TicketStatus).map((r) => (
             <MenuItem key={r} value={r}>
@@ -98,17 +112,14 @@ export default function CreateTicketForm({
             </MenuItem>
           ))}
         </TextField>
-        <TextField
-          fullWidth
-          label="Handler IDs (comma-separated)"
-          name="handler_ids"
-          onChange={handleChange}
-          margin="dense"
-        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={!isFormValid}
+        >
           Create
         </Button>
       </DialogActions>

@@ -29,8 +29,7 @@ export default function AddReportForm({
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await api.post("/reports/create", {
-        ticket_id: ticketId,
+      await api.post(`/reports/create/${ticketId}`, {
         content,
       });
       onReportCreated?.();

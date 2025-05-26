@@ -18,7 +18,6 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
     description: "",
     creation_date: "",
     status: "Open",
-    handler_ids: [],
   });
 
   useEffect(() => {
@@ -29,7 +28,6 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
         description: ticket.description || "",
         creation_date: ticket.creation_date?.split("T")[0] || "",
         status: ticket.status || "Open",
-        handler_ids: ticket.handler_ids || [],
       });
     }
   }, [ticket]);

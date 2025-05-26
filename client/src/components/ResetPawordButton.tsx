@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { Button } from "@mui/material";
 import Confirm from "./Confirm"; // Adjust path if needed
-import axios from "axios";
+import api from "../axios_conf";
 
 type ResetPasswordButtonProps = {
   userId: number;
-  onSuccess?: () => void; // Optional callback after successful reset
 };
 
 export default function ResetPasswordButton({
   userId,
-  onSuccess,
 }: ResetPasswordButtonProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,8 +16,7 @@ export default function ResetPasswordButton({
   const handleResetPassword = async () => {
     setLoading(true);
     try {
-      await axios.post(`/api/reset_password/${userId}`);
-      if (onSuccess) onSuccess();
+      await api.post(`/users/reset_password/${userId}`);
       alert("Password reset successfully.");
     } catch (error) {
       console.error("Failed to reset password:", error);
@@ -32,7 +29,12 @@ export default function ResetPasswordButton({
 
   return (
     <>
-      <Button variant="outlined" color="warning" onClick={() => setOpen(true)}>
+      <Button
+        variant="outlined"
+        color="warning"
+        onClick={() => setOpen(true)}
+        disabled={loading}
+      >
         Reset Password
       </Button>
 

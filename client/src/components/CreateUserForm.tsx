@@ -15,6 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 interface CreateUserDialogProps {
   open: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
 const createUserRequest = async (credentials: {
@@ -25,37 +26,35 @@ const createUserRequest = async (credentials: {
   return res.data;
 };
 
-const CreateUserForm: React.FC<CreateUserDialogProps> = ({ open, onClose }) => {
+const CreateUserForm: React.FC<CreateUserDialogProps> = ({
+  open,
+  onClose,
+  onCreated,
+}) => {
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
 
   const Mutation = useMutation({
     mutationFn: createUserRequest,
+    onSuccess: () => {
+      onCreated?.();
+    },
     onError: (error) => {
       console.error("Failed to create user:", error);
     },
   });
 
-  const handleCreateUser = (username: string, role: string) => {
+  const handleCreateUser = () => {
     Mutation.mutate({ username, role });
+    setUsername("");
+    setRole("");
+    onClose();
   };
 
-  const handleSubmit = () => {
-    if (username && role) {
-      handleCreateUser(username, role);
-      setUsername("");
-      setRole("");
-      onClose();
-    }
-  };
+  const isFormValid = username.trim() !== "" && role !== "";
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="sm" // options: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false
-    >
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Create New User</DialogTitle>
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 5, mt: 2, p: 3 }}
@@ -66,6 +65,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({ open, onClose }) => {
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
           variant="standard"
+          required
         />
         <TextField
           select
@@ -74,6 +74,7 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({ open, onClose }) => {
           onChange={(e) => setRole(e.target.value)}
           fullWidth
           variant="standard"
+          required
         >
           {Object.values(UserRole).map((r) => (
             <MenuItem key={r} value={r}>
@@ -84,7 +85,11 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({ open, onClose }) => {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button
+          onClick={handleCreateUser}
+          variant="contained"
+          disabled={!isFormValid}
+        >
           Create
         </Button>
       </DialogActions>

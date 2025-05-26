@@ -8,11 +8,14 @@ import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import CreateUserForm from "./CreateUserForm";
 import CreateTicketForm from "./CreateTicketForm";
 import CreateAssetForm from "./CreateAssetForm"; // ✅ Import form and type
+import { useQueryClient } from "@tanstack/react-query";
 
 const ActionMenu: React.FC = () => {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [createTicketOpen, setCreateTicketOpen] = useState(false);
   const [createAssetOpen, setCreateAssetOpen] = useState(false); // ✅ New state
+
+  const queryClient = useQueryClient();
 
   const actions = [
     {
@@ -53,17 +56,29 @@ const ActionMenu: React.FC = () => {
       <CreateUserForm
         open={createUserOpen}
         onClose={() => setCreateUserOpen(false)}
+        onCreated={() => {
+          setCreateAssetOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+        }}
       />
 
       {/* Create Ticket Dialog */}
       <CreateTicketForm
         open={createTicketOpen}
         onClose={() => setCreateTicketOpen(false)}
+        onCreated={() => {
+          setCreateAssetOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        }}
       />
 
       <CreateAssetForm
         open={createAssetOpen}
         onClose={() => setCreateAssetOpen(false)}
+        onCreated={() => {
+          setCreateAssetOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["assets"] });
+        }}
       />
     </>
   );

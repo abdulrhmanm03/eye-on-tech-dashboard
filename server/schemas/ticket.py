@@ -13,7 +13,7 @@ class TicketBase(BaseModel):
 
 # For creating a ticket
 class TicketCreate(TicketBase):
-    handler_ids: Optional[List[int]]  # IDs of technicians assigned to the ticket
+    pass
 
 # Minimal user schema for handlers
 class UserBasic(BaseModel):

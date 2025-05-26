@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from schemas.task import TaskCreate, TaskRead
+from schemas.task import TaskBase, TaskCreate, TaskRead
 from crud import task as crud_task
 from db import get_db
 from auth.utils import get_current_user
@@ -27,7 +27,7 @@ def read_task(task_id: int, db: Session = Depends(get_db), current_user: User = 
     return task
 
 @router.put("/{task_id}", response_model=TaskRead)
-def update_task(task_id: int, task_in: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_task(task_id: int, task_in: TaskBase, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     user_role = current_user.get("role")
 
     if user_role not in [UserRole.supervisor, UserRole.administrator]:

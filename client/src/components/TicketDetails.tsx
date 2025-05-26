@@ -19,6 +19,8 @@ import EditTaskForm from "./EditTaskForm"; // Assuming this is similar to EditPo
 import { useQueryClient } from "@tanstack/react-query";
 import AddTaskForm from "./AddTaskForm";
 import AddReportForm from "./AddReportForm";
+import AddTechForm from "./AddTechForm";
+import { Tabs, Tab } from "@mui/material";
 
 type Props = {
   open: boolean;
@@ -30,7 +32,7 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [editTicketOpen, setEditTicketOpen] = useState(false);
   const [confirmTicketDeleteOpen, setConfirmTicketDeleteOpen] = useState(false);
-
+  const [tabIndex, setTabIndex] = useState(0);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [confirmTaskDeleteOpen, setConfirmTaskDeleteOpen] = useState(false);
@@ -38,12 +40,38 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
   const [addReportOpen, setAddReportOpen] = useState(false);
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [addTechOpen, setAddTechOpen] = useState(false);
+  const [reports, setReports] = useState<any[]>([]);
+
+  const [selectedTech, setSelectedTech] = useState<any | null>(null);
+  const [confirmTechDeleteOpen, setConfirmTechDeleteOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [confirmReportDeleteOpen, setConfirmReportDeleteOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
     setCurrentTicket(ticket); // update local state when prop changes
   }, [ticket]);
+
+  const fetchTicket = async () => {
+    try {
+      const res = await api.get(`/tickets/${ticket.id}`);
+      setCurrentTicket(res.data);
+      queryClient.invalidateQueries(["tickets"]);
+    } catch (err) {
+      console.error("Failed to fetch ticket", err);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      const res = await api.post(`/reports/${ticket.id}`);
+      setReports(res.data); // if it returns a list, use res.data directly
+    } catch (err) {
+      console.error("Failed to fetch reports", err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -57,6 +85,7 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
   useEffect(() => {
     if (ticket?.id) {
       fetchTasks();
+      fetchReports(); // <-- add this
     }
   }, [ticket]);
 
@@ -84,6 +113,36 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
     }
   };
 
+  const handleDeleteReport = async () => {
+    if (!selectedReport?.id) return;
+    try {
+      await api.delete(`/reports/${selectedReport.id}`);
+      await fetchReports(); // refresh report list
+    } catch (err) {
+      console.error("Failed to delete report", err);
+    } finally {
+      setConfirmReportDeleteOpen(false);
+      setSelectedReport(null);
+    }
+  };
+
+  const handleDeleteTech = async () => {
+    if (!selectedTech?.id) return;
+    try {
+      await api.delete(`/tickets/${ticket.id}/tech/${selectedTech.id}`);
+      await fetchTicket();
+      const updatedHandlers = currentTicket.handlers.filter(
+        (tech: any) => tech.id !== selectedTech.id,
+      );
+      setCurrentTicket({ ...currentTicket, handlers: updatedHandlers });
+    } catch (err) {
+      console.error("Failed to delete technician", err);
+    } finally {
+      setConfirmTechDeleteOpen(false);
+      setSelectedTech(null);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -104,60 +163,169 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         </DialogTitle>
 
         <DialogContent dividers>
-          <Typography variant="subtitle1">Id: {currentTicket.id}</Typography>
-          <Typography variant="body2">
-            Description: {currentTicket.description}
-          </Typography>
+          <Tabs
+            value={tabIndex}
+            onChange={(e, newValue) => setTabIndex(newValue)}
+            centered
+          >
+            <Tab label="Tasks" />
+            <Tab label="Reports" />
+            <Tab label="Technicians" />
+          </Tabs>
 
-          <Typography variant="h6" sx={{ mt: 3 }}>
-            Tasks
-          </Typography>
-
-          {tasks.length > 0 ? (
-            tasks.map((task, index) => (
-              <Box
-                key={task.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  pl: 2,
-                  borderLeft: "4px solid #1976d2",
-                  position: "relative",
-                }}
-              >
-                <Typography variant="subtitle2">Task {index + 1}</Typography>
-                <Typography variant="body2">• Id: {task.id}</Typography>
-                <Typography variant="body2">• Status: {task.status}</Typography>
-
-                <Box sx={{ position: "absolute", top: 0, right: 0 }}>
-                  <IconButton
-                    onClick={() => {
-                      setSelectedTask(task);
-                      setEditTaskOpen(true);
+          {tabIndex === 0 && (
+            <>
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Tasks
+              </Typography>
+              {tasks.length > 0 ? (
+                tasks.map((task, index) => (
+                  <Box
+                    key={task.id}
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      pl: 2,
+                      borderLeft: "4px solid #1976d2",
+                      position: "relative",
                     }}
                   >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      setSelectedTask(task);
-                      setConfirmTaskDeleteOpen(true);
+                    <Typography variant="subtitle2">
+                      Task {index + 1}
+                    </Typography>
+                    <Typography variant="body2">• Id: {task.id}</Typography>
+                    <Typography variant="body2">
+                      • Status: {task.status}
+                    </Typography>
+                    <Box sx={{ position: "absolute", top: 0, right: 0 }}>
+                      <IconButton
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setEditTaskOpen(true);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setConfirmTaskDeleteOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                    <Divider sx={{ mt: 2 }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography sx={{ mt: 1 }}>No tasks found.</Typography>
+              )}
+            </>
+          )}
+
+          {tabIndex === 1 && (
+            <>
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Reports
+              </Typography>
+              {reports.length > 0 ? (
+                reports.map((report, index) => (
+                  <Box
+                    key={report.id}
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      pl: 2,
+                      borderLeft: "4px solid #1976d2",
+                      position: "relative", // Needed for positioning icons
                     }}
                   >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-                <Divider sx={{ mt: 2 }} />
-              </Box>
-            ))
-          ) : (
-            <Typography sx={{ mt: 1 }}>No tasks found.</Typography>
+                    <Typography variant="subtitle2">
+                      Report {index + 1}
+                    </Typography>
+                    <Typography variant="body2">
+                      • Created At:{" "}
+                      {new Date(report.created_at).toLocaleDateString("en-US", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </Typography>
+                    <Typography variant="body2">
+                      • Content: {report.content}
+                    </Typography>
+
+                    <Box sx={{ position: "absolute", top: 0, right: 0 }}>
+                      <IconButton
+                        onClick={() => {
+                          setSelectedReport(report);
+                          setConfirmReportDeleteOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+
+                    <Divider sx={{ mt: 2 }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography sx={{ mt: 1 }}>No reports found.</Typography>
+              )}
+            </>
+          )}
+
+          {tabIndex === 2 && (
+            <>
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Technicians
+              </Typography>
+              {currentTicket.handlers && currentTicket.handlers.length > 0 ? (
+                currentTicket.handlers.map((tech: any, index: number) => (
+                  <Box
+                    key={tech.id}
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      pl: 2,
+                      borderLeft: "4px solid #1976d2",
+                    }}
+                    position="relative"
+                  >
+                    <Typography variant="subtitle2">
+                      Technician {index + 1}
+                    </Typography>
+                    <Typography variant="body2">• ID: {tech.id}</Typography>
+                    <Typography variant="body2">
+                      • Username: {tech.username}
+                    </Typography>
+                    <Box sx={{ position: "absolute", top: 0, right: 0 }}>
+                      <IconButton
+                        onClick={() => {
+                          setSelectedTech(tech);
+                          setConfirmTechDeleteOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                    <Divider sx={{ mt: 2 }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography sx={{ mt: 1 }}>No technicians assigned.</Typography>
+              )}
+            </>
           )}
         </DialogContent>
 
         <DialogActions>
           <Button onClick={() => setAddReportOpen(true)} variant="outlined">
             Add Report
+          </Button>
+          <Button onClick={() => setAddTechOpen(true)} variant="outlined">
+            Add Tech
           </Button>
           <Button onClick={() => setAddTaskOpen(true)} variant="contained">
             Add Task
@@ -215,8 +383,19 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
           onClose={() => setAddReportOpen(false)}
           ticketId={ticket.id}
           onReportCreated={() => {
-            // Optional: you can implement report fetching here if you decide to show reports
+            fetchReports(); // Refresh reports
             setAddReportOpen(false);
+          }}
+        />
+      )}
+      {addTechOpen && (
+        <AddTechForm
+          open={addTechOpen}
+          onClose={() => setAddTechOpen(false)}
+          ticketId={ticket.id}
+          onSuccess={() => {
+            fetchTicket();
+            setAddTechOpen(false);
           }}
         />
       )}
@@ -228,6 +407,24 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         onCancel={() => {
           setConfirmTaskDeleteOpen(false);
           setSelectedTask(null);
+        }}
+      />
+      <Confirm
+        open={confirmTechDeleteOpen}
+        message={`Are you sure you want to remove technician "${selectedTech?.username || "this technician"}" from the ticket?`}
+        onConfirm={handleDeleteTech}
+        onCancel={() => {
+          setConfirmTechDeleteOpen(false);
+          setSelectedTech(null);
+        }}
+      />
+      <Confirm
+        open={confirmReportDeleteOpen}
+        message={`Are you sure you want to delete report ID "${selectedReport?.id}"?`}
+        onConfirm={handleDeleteReport}
+        onCancel={() => {
+          setConfirmReportDeleteOpen(false);
+          setSelectedReport(null);
         }}
       />
     </>
