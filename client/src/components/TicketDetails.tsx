@@ -193,10 +193,17 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
                     <Typography variant="subtitle2">
                       Task {index + 1}
                     </Typography>
-                    <Typography variant="body2">• Id: {task.id}</Typography>
-                    <Typography variant="body2">
-                      • Status: {task.status}
-                    </Typography>
+                    {Object.entries(task).map(([key, value]) => (
+                      <Typography key={key} variant="body2">
+                        •{" "}
+                        {key.charAt(0).toUpperCase() +
+                          key.slice(1).replace(/_/g, " ")}
+                        :{" "}
+                        {value instanceof Date
+                          ? value.toLocaleDateString()
+                          : value?.toString() || "N/A"}
+                      </Typography>
+                    ))}
                     <Box sx={{ position: "absolute", top: 0, right: 0 }}>
                       <IconButton
                         onClick={() => {
@@ -321,15 +328,21 @@ export default function TicketDetails({ open, ticket, onClose }: Props) {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setAddReportOpen(true)} variant="outlined">
-            Add Report
-          </Button>
-          <Button onClick={() => setAddTechOpen(true)} variant="outlined">
-            Add Tech
-          </Button>
-          <Button onClick={() => setAddTaskOpen(true)} variant="contained">
-            Add Task
-          </Button>
+          {tabIndex === 0 && (
+            <Button onClick={() => setAddTaskOpen(true)} variant="contained">
+              Add Task
+            </Button>
+          )}
+          {tabIndex === 1 && (
+            <Button onClick={() => setAddReportOpen(true)} variant="contained">
+              Add Report
+            </Button>
+          )}
+          {tabIndex === 2 && (
+            <Button onClick={() => setAddTechOpen(true)} variant="contained">
+              Add Tech
+            </Button>
+          )}
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </Dialog>

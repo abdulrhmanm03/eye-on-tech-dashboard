@@ -67,7 +67,10 @@ const CreateAssetForm: React.FC<CreateAssetFormProps> = ({
   });
 
   const createAssetRequest = async (data: AssetFormData) => {
-    const res = await api.post("/assets/create", data);
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== ""),
+    );
+    const res = await api.post("/assets/create", payload);
     return res.data;
   };
 

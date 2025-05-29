@@ -3,12 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from schemas.asset import AssetCreate, AssetRead
 from crud import asset as crud_asset
+from crud import ticket as crud_ticket
 from db import get_db
 from auth.utils import get_current_user
 from models.user import User
 from enums.user_role import UserRole
 from schemas.component import ComponentRead
 from crud import component as component_crud
+from schemas.ticket import TicketRead
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -35,6 +37,14 @@ def list_assets(
     current_user: User = Depends(get_current_user)
 ):
     return crud_asset.get_assets(db, skip=skip, limit=limit)
+
+@router.get("/tickets/{asset_id}", response_model=List[TicketRead])
+def get_asset_tickets(
+    asset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return crud_ticket.get_asset_tickets(db, asset_id)
 
 @router.get("/components/{asset_id}", response_model=List[ComponentRead])
 def get_ticket_tasks(asset_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

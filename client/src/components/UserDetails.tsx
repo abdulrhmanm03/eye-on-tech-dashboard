@@ -138,13 +138,8 @@ export default function UserDetails({ open, user, onClose }: Props) {
                   Point of Contact {index + 1}
                 </Typography>
                 <Typography variant="body2">
-                  • Organization: {poc.organization}
+                  • {poc.type}: {poc.value}
                 </Typography>
-                <Typography variant="body2">• Name: {poc.full_name}</Typography>
-                <Typography variant="body2">
-                  • Phone: {poc.phone_number}
-                </Typography>
-                <Typography variant="body2">• Email: {poc.email}</Typography>
 
                 <Box sx={{ position: "absolute", top: 0, right: 0 }}>
                   <IconButton

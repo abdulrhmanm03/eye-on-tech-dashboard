@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.asset import Asset
 from schemas.asset import AssetCreate
+from schemas.ticket import TicketRead
 
 def create_asset(db: Session, asset_in: AssetCreate) -> Asset:
     asset = Asset(**asset_in.dict())
@@ -32,3 +33,5 @@ def delete_asset(db: Session, asset_id: int) -> bool:
     db.delete(asset)
     db.commit()
     return True
+
+

@@ -26,24 +26,21 @@ export default function EditTaskForm({
   onSuccess,
 }: Props) {
   const [formData, setFormData] = useState({
-    object_type: "",
-    object_id: 0,
     description: "",
     creation_date: dayjs(),
-    status: "Pending",
-    owner_id: null,
+    status: TaskStatus.in_progress as TaskStatus,
+    ticket_id: 0,
     id: null,
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (task) {
       setFormData({
-        object_type: task.object_type || "",
-        object_id: task.object_id || 0,
         description: task.description || "",
         creation_date: dayjs(task.creation_date),
-        status: task.status || "Pending",
-        owner_id: task.owner_id,
+        status: task.status || TaskStatus.in_progress,
+        ticket_id: task.ticket_id || 0,
         id: task.id,
       });
     }
@@ -53,15 +50,27 @@ export default function EditTaskForm({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Validation function to check if form is complete
+  const isFormValid = () => {
+    return (
+      formData.description.trim() !== "" &&
+      formData.creation_date.isValid() &&
+      formData.status &&
+      formData.id !== null
+    );
+  };
+
   const handleSubmit = async () => {
+    if (!isFormValid()) {
+      return; // Don't submit if form is invalid
+    }
+
+    setLoading(true);
     const payload = {
-      object_type: formData.object_type,
-      object_id: Number(formData.object_id),
-      description: formData.description,
+      description: formData.description.trim(),
       creation_date: formData.creation_date.format("YYYY-MM-DD"),
       status: formData.status,
-      owner_id: formData.owner_id,
-      id: formData.id,
+      ticket_id: formData.ticket_id,
     };
 
     try {
@@ -70,6 +79,8 @@ export default function EditTaskForm({
       onClose();
     } catch (err) {
       console.error("Failed to update task", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,23 +91,6 @@ export default function EditTaskForm({
         sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2, p: 3 }}
       >
         <TextField
-          name="object_type"
-          label="Object Type"
-          value={formData.object_type}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
-        <TextField
-          name="object_id"
-          label="Object ID"
-          type="number"
-          value={formData.object_id}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
-        <TextField
           name="description"
           label="Description"
           value={formData.description}
@@ -105,6 +99,11 @@ export default function EditTaskForm({
           multiline
           minRows={2}
           variant="standard"
+          required
+          error={formData.description.trim() === ""}
+          helperText={
+            formData.description.trim() === "" ? "Description is required" : ""
+          }
         />
         <TextField
           name="creation_date"
@@ -117,6 +116,7 @@ export default function EditTaskForm({
           fullWidth
           InputLabelProps={{ shrink: true }}
           variant="standard"
+          required
         />
         <TextField
           name="status"
@@ -126,6 +126,7 @@ export default function EditTaskForm({
           onChange={handleChange}
           fullWidth
           variant="standard"
+          required
         >
           {Object.values(TaskStatus).map((status) => (
             <MenuItem key={status} value={status}>
@@ -133,10 +134,27 @@ export default function EditTaskForm({
             </MenuItem>
           ))}
         </TextField>
+        <TextField
+          name="ticket_id"
+          label="Ticket ID"
+          type="number"
+          value={formData.ticket_id}
+          onChange={handleChange}
+          fullWidth
+          variant="standard"
+          disabled
+          helperText="Ticket ID cannot be changed"
+        />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={loading || !isFormValid()}
+        >
           Save
         </Button>
       </DialogActions>

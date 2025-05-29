@@ -26,13 +26,10 @@ export default function AddTaskForm({
   ticketId,
 }: Props) {
   const [formData, setFormData] = useState({
-    object_type: "",
-    object_id: "",
     description: "",
     creation_date: new Date().toISOString().split("T")[0],
-    status: "In Progress" as TaskStatus,
+    status: TaskStatus.in_progress as TaskStatus,
   });
-
   const [loading, setLoading] = useState(false);
 
   const handleChange = (
@@ -45,15 +42,30 @@ export default function AddTaskForm({
     }));
   };
 
+  // Validation function to check if form is complete
+  const isFormValid = () => {
+    return (
+      formData.description.trim() !== "" &&
+      formData.creation_date !== "" &&
+      formData.status
+    );
+  };
+
   const handleSubmit = async () => {
+    if (!isFormValid()) {
+      return; // Don't submit if form is invalid
+    }
+
     setLoading(true);
     const taskPayload = {
       ticket_id: ticketId,
-      ...formData,
+      description: formData.description.trim(),
+      creation_date: formData.creation_date,
+      status: formData.status,
     };
 
     try {
-      await api.post("/tasks/create/", taskPayload);
+      await api.post("/tasks/create", taskPayload); // Removed trailing slash to match your router
       onTaskCreated?.(); // trigger callback to refetch tasks
       handleClose(); // close and reset
     } catch (err) {
@@ -65,8 +77,6 @@ export default function AddTaskForm({
 
   const handleClose = () => {
     setFormData({
-      object_type: "",
-      object_id: "",
       description: "",
       creation_date: new Date().toISOString().split("T")[0],
       status: TaskStatus.in_progress,
@@ -80,20 +90,6 @@ export default function AddTaskForm({
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField
-            name="object_type"
-            label="Object Type"
-            fullWidth
-            value={formData.object_type}
-            onChange={handleChange}
-          />
-          <TextField
-            name="object_id"
-            label="Object ID"
-            fullWidth
-            value={formData.object_id}
-            onChange={handleChange}
-          />
-          <TextField
             name="description"
             label="Description"
             fullWidth
@@ -101,6 +97,13 @@ export default function AddTaskForm({
             minRows={2}
             value={formData.description}
             onChange={handleChange}
+            required
+            error={formData.description.trim() === ""}
+            helperText={
+              formData.description.trim() === ""
+                ? "Description is required"
+                : ""
+            }
           />
           <TextField
             name="creation_date"
@@ -110,6 +113,7 @@ export default function AddTaskForm({
             InputLabelProps={{ shrink: true }}
             value={formData.creation_date}
             onChange={handleChange}
+            required
           />
           <TextField
             name="status"
@@ -118,6 +122,7 @@ export default function AddTaskForm({
             fullWidth
             value={formData.status}
             onChange={handleChange}
+            required
           >
             {Object.values(TaskStatus).map((status) => (
               <MenuItem key={status} value={status}>
@@ -128,7 +133,11 @@ export default function AddTaskForm({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={loading || !isFormValid()}
+        >
           Save
         </Button>
         <Button onClick={handleClose} disabled={loading}>

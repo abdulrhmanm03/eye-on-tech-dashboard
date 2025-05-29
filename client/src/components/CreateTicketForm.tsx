@@ -21,11 +21,10 @@ export default function CreateTicketForm({
   onCreated?: () => void;
 }) {
   const [formData, setFormData] = useState({
-    object_type: "",
-    object_id: "",
     description: "",
     creation_date: new Date().toISOString().split("T")[0],
     status: "open",
+    asset_id: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,18 +33,17 @@ export default function CreateTicketForm({
   };
 
   const isFormValid =
-    formData.object_type.trim() !== "" &&
-    formData.object_id.trim() !== "" &&
     formData.description.trim() !== "" &&
     formData.creation_date.trim() !== "" &&
-    formData.status.trim() !== "";
+    formData.status.trim() !== "" &&
+    formData.asset_id.trim() !== "";
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
     try {
       const payload = {
         ...formData,
-        object_id: Number(formData.object_id),
+        asset_id: Number(formData.asset_id),
         creation_date: new Date(formData.creation_date)
           .toISOString()
           .split("T")[0],
@@ -64,16 +62,8 @@ export default function CreateTicketForm({
       <DialogContent>
         <TextField
           fullWidth
-          label="Object Type"
-          name="object_type"
-          onChange={handleChange}
-          margin="dense"
-          required
-        />
-        <TextField
-          fullWidth
-          label="Object ID"
-          name="object_id"
+          label="Asset ID"
+          name="asset_id"
           onChange={handleChange}
           margin="dense"
           required

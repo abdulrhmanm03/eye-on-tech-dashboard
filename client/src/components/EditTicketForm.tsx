@@ -13,8 +13,7 @@ import api from "../axios_conf";
 
 export default function EditTicketForm({ open, onClose, ticket }: any) {
   const [formData, setFormData] = useState({
-    object_type: "",
-    object_id: 0,
+    asset_id: 0,
     description: "",
     creation_date: "",
     status: "Open",
@@ -23,8 +22,7 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
   useEffect(() => {
     if (ticket) {
       setFormData({
-        object_type: ticket.object_type || "",
-        object_id: ticket.object_id || 0,
+        asset_id: ticket.asset_id || 0,
         description: ticket.description || "",
         creation_date: ticket.creation_date?.split("T")[0] || "",
         status: ticket.status || "Open",
@@ -36,7 +34,7 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === "object_id" ? parseInt(value) : value,
+      [name]: name === "asset_id" ? parseInt(value) : value,
     });
   };
 
@@ -56,18 +54,10 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
         sx={{ display: "flex", flexDirection: "column", gap: 5, mt: 2, p: 3 }}
       >
         <TextField
-          name="object_type"
-          label="Object Type"
-          value={formData.object_type}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
-        <TextField
-          name="object_id"
-          label="Object ID"
+          name="asset_id"
+          label="Asset ID"
           type="number"
-          value={formData.object_id}
+          value={formData.asset_id}
           onChange={handleChange}
           fullWidth
           variant="standard"

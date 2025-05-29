@@ -1,12 +1,11 @@
+from typing import Optional
 from pydantic import BaseModel
 from datetime import date
 from enums.task_status import TaskStatus
 
 # Shared fields
 class TaskBase(BaseModel):
-    object_type: str
-    object_id: int
-    description: str
+    description: Optional[str]
     creation_date: date
     status: TaskStatus
 

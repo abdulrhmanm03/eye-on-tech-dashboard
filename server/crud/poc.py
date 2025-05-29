@@ -2,14 +2,11 @@ from sqlalchemy.orm import Session
 from models import poc as models
 from schemas import poc as schemas
 
-def create_poc(db: Session, poc: schemas.PointOfContactCreate, user_id: int):
-    # Avoid passing user_id twice
+def create_poc(db: Session, poc: schemas.PointOfContactCreate):
     db_poc = models.PointOfContact(
-        organization=poc.organization,
-        full_name=poc.full_name,
-        phone_number=poc.phone_number,
-        email=poc.email,
-        user_id=user_id  # use the user_id argument only
+        type=poc.type,
+        value= poc.value,
+        user_id=poc.user_id
     )
     db.add(db_poc)
     db.commit()

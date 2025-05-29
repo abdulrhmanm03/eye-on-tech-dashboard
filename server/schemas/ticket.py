@@ -5,15 +5,12 @@ from enums.ticket_status import TicketStatus
 
 # Shared fields
 class TicketBase(BaseModel):
-    object_type: str
-    object_id: int
-    description: str
+    description: Optional[str]
     creation_date: date
     status: TicketStatus
 
-# For creating a ticket
 class TicketCreate(TicketBase):
-    pass
+    asset_id: int
 
 # Minimal user schema for handlers
 class UserBasic(BaseModel):
@@ -27,6 +24,7 @@ class UserBasic(BaseModel):
 class TicketRead(TicketBase):
     id: int
     owner_id: int
+    asset_id: int
     handlers: List[UserBasic]
 
     class Config:

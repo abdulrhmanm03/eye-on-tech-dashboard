@@ -1,13 +1,11 @@
 from pydantic import BaseModel
 
-# Shared fields
-class PointOfContactBase(BaseModel):
-    organization: str
-    full_name: str
-    phone_number: str
-    email: str
+from enums.poc_types import ContactType
 
-# For creating a contact
+class PointOfContactBase(BaseModel):
+    type: ContactType  
+    value: str
+
 class PointOfContactCreate(PointOfContactBase):
     user_id: int
 

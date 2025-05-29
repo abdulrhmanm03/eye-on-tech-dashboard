@@ -1,17 +1,19 @@
 from sqlalchemy.orm import Session
 from models.ticket import Ticket
+from models.asset import Asset 
 from models.user import User
 from schemas.ticket import TicketCreate 
 from typing import List
+from datetime import date
+from enums.ticket_status import TicketStatus
 
 def create_ticket(db: Session, ticket_in: TicketCreate, owner_id: int) -> Ticket:
     ticket = Ticket(
-        object_type=ticket_in.object_type,
-        object_id=ticket_in.object_id,
         description=ticket_in.description,
         creation_date=ticket_in.creation_date,
         status=ticket_in.status,
         owner_id=owner_id,
+        asset_id=ticket_in.asset_id,
     )
     db.add(ticket)
     db.commit()
@@ -32,8 +34,18 @@ def update_ticket(db: Session, ticket_id: int, ticket_in: TicketCreate) -> Ticke
     if not ticket:
         return None
 
+    original_status = getattr(ticket, 'status')
+
     for field, value in ticket_in.model_dump().items():
         setattr(ticket, field, value)
+
+    updated_status = getattr(ticket, 'status')
+    if original_status == TicketStatus.open and updated_status == TicketStatus.closed:
+            if getattr(ticket, 'asset_id'):
+                asset = db.query(Asset).filter(Asset.id == ticket.asset_id).first()
+                if asset:
+                    today = date.today()
+                    setattr(asset, "last_service", today)
 
     db.commit()
     db.refresh(ticket)
@@ -93,3 +105,10 @@ def delete_tech_from_ticket(db: Session, ticket_id: int, tech_id: int):
         if technician in ticket.handlers:
             ticket.handlers.remove(technician)
             db.commit()
+
+def get_asset_tickets(db: Session, asset_id: int):
+    return (
+        db.query(Ticket)
+        .filter(Ticket.asset_id == asset_id)
+        .all()
+    )
