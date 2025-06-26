@@ -16,18 +16,29 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (poc: any) => void;
-  userId: number;
+  targetType: "user" | "asset";
+  targetId: number;
+  username?: string; // Only used when targetType is "user"
 };
 
-export default function AddPocForm({ open, onClose, onSave, userId }: Props) {
+export default function AddPocForm({
+  open,
+  onClose,
+  onSave,
+  targetType,
+  targetId,
+  username = "",
+}: Props) {
   const [formData, setFormData] = useState({
     type: "",
     value: "",
+    username: "",
   });
 
   const [errors, setErrors] = useState({
     type: false,
     value: false,
+    username: false,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,26 +48,43 @@ export default function AddPocForm({ open, onClose, onSave, userId }: Props) {
   };
 
   const handleSubmit = async () => {
-    const hasErrors = !formData.type || !formData.value;
+    const isAsset = targetType === "asset";
+    const hasErrors =
+      !formData.type || !formData.value || (isAsset && !formData.username);
+
     setErrors({
       type: !formData.type,
       value: !formData.value,
+      username: isAsset && !formData.username,
     });
 
     if (hasErrors) return;
 
-    const pocPayload = {
-      ...formData,
-      user_id: userId,
+    const pocPayload: any = {
+      type: formData.type,
+      value: formData.value,
+      username: isAsset ? formData.username : username,
     };
 
+    if (isAsset) {
+      pocPayload.asset_id = targetId;
+    } else {
+      pocPayload.user_id = targetId;
+    }
+
+    const endpoint = isAsset ? "/pocs/asset/create/" : "/pocs/user/create/";
+
     try {
-      const response = await api.post("/pocs/create/", pocPayload);
+      const response = await api.post(endpoint, pocPayload);
       onSave(response.data);
-      onClose();
-      setFormData({ type: "", value: "" });
     } catch (err) {
       console.error("Failed to add PoC", err);
+      return;
+    } finally {
+      // Clean up regardless of success or failure
+      setFormData({ type: "", value: "", username: "" });
+      setErrors({ type: false, value: false, username: false });
+      onClose(); // Make sure the dialog closes no matter what
     }
   };
 
@@ -91,6 +119,18 @@ export default function AddPocForm({ open, onClose, onSave, userId }: Props) {
             error={errors.value}
             helperText={errors.value ? "Value is required" : ""}
           />
+
+          {targetType === "asset" && (
+            <TextField
+              name="username"
+              label="Username"
+              fullWidth
+              value={formData.username}
+              onChange={handleChange}
+              error={errors.username}
+              helperText={errors.username ? "Username is required" : ""}
+            />
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

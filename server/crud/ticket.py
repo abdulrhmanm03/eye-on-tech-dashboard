@@ -1,3 +1,4 @@
+from operator import or_
 from sqlalchemy.orm import Session
 from models.ticket import Ticket
 from models.asset import Asset 
@@ -6,6 +7,7 @@ from schemas.ticket import TicketCreate
 from typing import List
 from datetime import date
 from enums.ticket_status import TicketStatus
+from enums.user_role import UserRole
 
 def create_ticket(db: Session, ticket_in: TicketCreate, owner_id: int) -> Ticket:
     ticket = Ticket(
@@ -23,8 +25,13 @@ def create_ticket(db: Session, ticket_in: TicketCreate, owner_id: int) -> Ticket
 def get_ticket(db: Session, ticket_id: int) -> Ticket | None:
     return db.query(Ticket).filter(Ticket.id == ticket_id).first()
 
-def get_user_tickets(db: Session, user_id: int) -> List[Ticket] | None:
-    return db.query(Ticket).filter(Ticket.owner_id == user_id).all()
+def get_user_tickets(db: Session, user_id: int) -> List[Ticket]:
+    return db.query(Ticket).filter(
+        or_(
+            Ticket.owner_id == user_id,
+            Ticket.handlers.any(User.id == user_id)
+        )
+    ).all()
 
 def get_tickets(db: Session, skip: int = 0, limit: int = 100) -> List[Ticket]:
     return db.query(Ticket).offset(skip).limit(limit).all()
@@ -87,11 +94,12 @@ def add_tech_to_ticket(
 def search_tech(query: str, db: Session):
     return (
         db.query(User)
-        .filter(User.role == "technician")
-        .filter(User.id.ilike(f"%{query}%"))
+        .filter(User.role == UserRole.technician)
+        .filter(User.username.ilike(f"%{query}%"))
         .limit(10)
         .all()
     )
+
 def get_ticket_techs(db: Session, ticket_id: int):
         ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
         if not ticket:
@@ -112,3 +120,13 @@ def get_asset_tickets(db: Session, asset_id: int):
         .filter(Ticket.asset_id == asset_id)
         .all()
     )
+
+def is_user_part_of_ticket(db: Session, ticket_id: int, user_id: int ) -> bool:
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        return False
+
+    if getattr(ticket, 'owner_id') == user_id:
+        return True
+
+    return any(handler.id == user_id for handler in ticket.handlers)

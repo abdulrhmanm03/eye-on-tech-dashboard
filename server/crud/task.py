@@ -16,8 +16,8 @@ def create_task(db: Session, task_in: TaskCreate) -> Task:
 def get_task(db: Session, task_id: int) -> Task | None:
     return db.query(Task).filter(Task.id == task_id).first()
 
-def get_tasks(db: Session, skip: int = 0, limit: int = 100) -> list[Task]:
-    return db.query(Task).offset(skip).limit(limit).all()
+def get_tasks(db: Session) -> list[Task]:
+    return db.query(Task).all()
 
 def get_ticket_tasks(db: Session, ticket_id: int, skip: int = 0, limit: int = 100) -> list[Task]:
     return (

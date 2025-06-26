@@ -15,6 +15,7 @@ type Props = {
   onClose: () => void;
   onReportCreated?: () => void;
   ticketId: number;
+  taskId?: number; // Optional task ID prop
 };
 
 export default function AddReportForm({
@@ -22,6 +23,7 @@ export default function AddReportForm({
   onClose,
   onReportCreated,
   ticketId,
+  taskId,
 }: Props) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,9 +31,12 @@ export default function AddReportForm({
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await api.post(`/reports/create/${ticketId}`, {
+      const payload = {
         content,
-      });
+        task_id: taskId || null,
+      };
+      console.log(payload);
+      await api.post(`/reports/create/${ticketId}`, payload);
       onReportCreated?.();
       handleClose();
     } catch (err) {

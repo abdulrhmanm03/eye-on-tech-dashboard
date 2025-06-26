@@ -19,6 +19,14 @@ def create_user_controller(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to perform this action",
         )
+
+    existing_user = crud.get_user_by_username(db, user.username)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Username '{user.username}' is already taken.",
+        )
+
     return crud.create_user(db, user)
 
 
@@ -69,8 +77,15 @@ def update_user_controller(
 
 
 def list_users_controller(
-    db: Session = Depends(get_db)
+    db: Session,
+    current_user: User
 ):
+    user_role = current_user.get("role")
+    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
     return crud.get_users(db)
 
 def get_user_by_id_controller(user_id: int, db: Session, current_user: dict):

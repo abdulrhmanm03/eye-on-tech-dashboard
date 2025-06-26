@@ -13,7 +13,7 @@ import api from "../axios_conf";
 
 export default function EditTicketForm({ open, onClose, ticket }: any) {
   const [formData, setFormData] = useState({
-    asset_id: 0,
+    asset_id: ticket.asset_id,
     description: "",
     creation_date: "",
     status: "Open",
@@ -22,7 +22,7 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
   useEffect(() => {
     if (ticket) {
       setFormData({
-        asset_id: ticket.asset_id || 0,
+        asset_id: ticket.asset_id,
         description: ticket.description || "",
         creation_date: ticket.creation_date?.split("T")[0] || "",
         status: ticket.status || "Open",
@@ -53,15 +53,6 @@ export default function EditTicketForm({ open, onClose, ticket }: any) {
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 5, mt: 2, p: 3 }}
       >
-        <TextField
-          name="asset_id"
-          label="Asset ID"
-          type="number"
-          value={formData.asset_id}
-          onChange={handleChange}
-          fullWidth
-          variant="standard"
-        />
         <TextField
           name="description"
           label="Description"

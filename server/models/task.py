@@ -12,3 +12,4 @@ class Task(Base):
     status = Column(Enum(TaskStatus))
 
     ticket = relationship("Ticket", back_populates="tasks")  # Reverse link to Ticket
+    reports = relationship("Report", back_populates="task", cascade="all, delete-orphan")

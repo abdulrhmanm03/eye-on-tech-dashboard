@@ -9,9 +9,9 @@ function App() {
     <>
       <CssBaseline />
       <Routes>
-        <Route path="/" element={<LoginForm />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route
-          path="/home"
+          path="/"
           element={
             <PrivateRoute>
               <MainPage />

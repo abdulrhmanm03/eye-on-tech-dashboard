@@ -3,34 +3,16 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   Paper,
   Typography,
-  TextField,
-  MenuItem,
-  Box,
-  Autocomplete,
-  IconButton,
-  Button,
-  Popover,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  Divider,
 } from "@mui/material";
-import {
-  ArrowDownward,
-  ArrowUpward,
-  ViewColumn,
-  Refresh,
-} from "@mui/icons-material";
-import api from "../axios_conf";
+import api from "../../axios_conf";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
-import UserDetails from "./UserDetails";
-import TicketDetails from "./TicketDetails";
-import AssetDetails from "./AssetDetails";
+import ToolBar from "./ToolBar";
+import TableHeader from "./TableHeader";
+import DetailsDialog from "./DetailsDialog";
 
 type Props = { view: string };
 
@@ -41,6 +23,10 @@ export default function DataTable({ view }: Props) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
+  const [owners, setOwners] = useState<Record<number, string>>({});
+  const [assets, setAssets] = useState<
+    Record<number, { type?: string; model?: string }>
+  >({});
   const [searchCol, setSearchCol] = useState(""),
     [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState(""),
@@ -84,7 +70,54 @@ export default function DataTable({ view }: Props) {
     setColumnVisibility(initializedColumnVisibility);
   }
 
-  // Reset column visibility when view changes
+  const fetchOwners = async (userId: number) => {
+    if (owners[userId]) return owners[userId]; // already cached
+
+    try {
+      const response = await api.get(`/users/${userId}`);
+      const username = response.data.username;
+      setOwners((prev) => ({ ...prev, [userId]: username }));
+      return username;
+    } catch (error) {
+      console.error("Failed to fetch user", userId);
+      return `User ${userId}`;
+    }
+  };
+
+  const fetchAsset = async (assetId: number) => {
+    if (assets[assetId]) return assets[assetId]; // already cached
+
+    try {
+      const response = await api.get(`/assets/${assetId}`);
+      const { type, model } = response.data;
+      const assetData = { type, model };
+      setAssets((prev) => ({ ...prev, [assetId]: assetData }));
+      return assetData;
+    } catch (error) {
+      console.error("Failed to fetch asset", assetId);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!Array.isArray(data)) return;
+
+    const ownerIds = new Set<number>();
+    const assetIds = new Set<number>();
+
+    data.forEach((row: any) => {
+      if (row.owner_id && !owners[row.owner_id]) {
+        ownerIds.add(row.owner_id);
+      }
+      if (row.asset_id && !assets[row.asset_id]) {
+        assetIds.add(row.asset_id);
+      }
+    });
+
+    ownerIds.forEach((id) => fetchOwners(id));
+    assetIds.forEach((id) => fetchAsset(id));
+  }, [data]);
+
   useEffect(() => {
     if (keys.length > 0) {
       const allVisible: Record<string, boolean> = {};
@@ -171,8 +204,6 @@ export default function DataTable({ view }: Props) {
     setColumnVisibility(allVisible);
   };
 
-  const columnMenuOpen = Boolean(columnMenuAnchorEl);
-
   return (
     <>
       {isLoading && <Typography>Loading...</Typography>}
@@ -181,110 +212,33 @@ export default function DataTable({ view }: Props) {
       )}
       {!isLoading && data && (
         <>
-          <Box display="flex" gap={2} mb={2} px={2} alignItems="center">
-            <TextField
-              select
-              label="Column"
-              size="small"
-              value={searchCol}
-              onChange={(e) => {
-                setSearchCol(e.target.value);
-                setQuery("");
-              }}
-              sx={{ minWidth: 150 }}
-            >
-              {keys.map((k) => (
-                <MenuItem key={k} value={k}>
-                  {k.toUpperCase()}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Autocomplete
-              freeSolo
-              options={suggestions}
-              inputValue={query}
-              onInputChange={(_, value) => setQuery(value)}
-              disabled={!searchCol}
-              size="small"
-              sx={{ minWidth: 200 }}
-              renderInput={(params) => <TextField {...params} label="Search" />}
-            />
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ViewColumn />}
-              onClick={handleColumnMenuOpen}
-            >
-              Columns
-            </Button>
-            <Popover
-              open={columnMenuOpen}
-              anchorEl={columnMenuAnchorEl}
-              onClose={handleColumnMenuClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-            >
-              <Box sx={{ p: 2, minWidth: 200 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                  Show/Hide Columns
-                </Typography>
-                <FormGroup>
-                  {keys.map((key) => (
-                    <FormControlLabel
-                      key={key}
-                      control={
-                        <Checkbox
-                          checked={columnVisibility[key] !== false}
-                          onChange={() => toggleColumnVisibility(key)}
-                          size="small"
-                        />
-                      }
-                      label={key.toUpperCase()}
-                    />
-                  ))}
-                </FormGroup>
-                <Divider sx={{ my: 1 }} />
-                <Button
-                  fullWidth
-                  size="small"
-                  variant="text"
-                  startIcon={<Refresh />}
-                  onClick={resetColumnVisibility}
-                >
-                  Reset All
-                </Button>
-              </Box>
-            </Popover>
-          </Box>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 700 }}>
-              <TableHead>
-                <TableRow>
-                  {visibleKeys.map((k) => (
-                    <TableCell key={k} sx={{ fontWeight: 600 }}>
-                      <Box display="flex" alignItems="center">
-                        {k.toUpperCase()}
-                        <IconButton size="small" onClick={() => toggleSort(k)}>
-                          {sortBy === k ? (
-                            sortOrder === "asc" ? (
-                              <ArrowUpward fontSize="small" />
-                            ) : (
-                              <ArrowDownward fontSize="small" />
-                            )
-                          ) : (
-                            <ArrowDownward
-                              sx={{ opacity: 0.3 }}
-                              fontSize="small"
-                            />
-                          )}
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
+          <ToolBar
+            keys={keys}
+            searchCol={searchCol}
+            setSearchCol={setSearchCol}
+            query={query}
+            setQuery={setQuery}
+            suggestions={suggestions}
+            columnVisibility={columnVisibility}
+            toggleColumnVisibility={toggleColumnVisibility}
+            resetColumnVisibility={resetColumnVisibility}
+            columnMenuAnchorEl={columnMenuAnchorEl}
+            handleColumnMenuOpen={handleColumnMenuOpen}
+            handleColumnMenuClose={handleColumnMenuClose}
+          />
+          <TableContainer
+            component={Paper}
+            sx={{
+              maxHeight: 600, // Set height as needed
+            }}
+          >
+            <Table stickyHeader sx={{ minWidth: 700 }}>
+              <TableHeader
+                visibleKeys={visibleKeys}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                toggleSort={toggleSort}
+              />
               <TableBody>
                 {filtered.map((row: any) => (
                   <TableRow
@@ -295,7 +249,19 @@ export default function DataTable({ view }: Props) {
                     sx={{ cursor: "pointer" }}
                   >
                     {visibleKeys.map((k) => (
-                      <TableCell key={k}>{String(row[k])}</TableCell>
+                      <TableCell key={k}>
+                        {k === "owner_id"
+                          ? owners[row[k]] || row[k]
+                          : k === "asset_id"
+                            ? assets[row[k]]?.type ||
+                              assets[row[k]]?.model ||
+                              row[k]
+                            : row[k] == null
+                              ? ""
+                              : typeof row[k] === "string" && row[k].length > 50
+                                ? `${row[k].slice(0, 50)}...`
+                                : String(row[k])}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))}
@@ -304,27 +270,12 @@ export default function DataTable({ view }: Props) {
           </TableContainer>
         </>
       )}
-      {selectedRow && view.toLowerCase() === "users" && (
-        <UserDetails
-          open={detailsOpen}
-          user={selectedRow}
-          onClose={closeDetails}
-        />
-      )}
-      {selectedRow && view.toLowerCase() === "tickets" && (
-        <TicketDetails
-          open={detailsOpen}
-          ticket={selectedRow}
-          onClose={closeDetails}
-        />
-      )}
-      {selectedRow && view.toLowerCase() === "assets" && (
-        <AssetDetails
-          open={detailsOpen}
-          asset={selectedRow}
-          onClose={closeDetails}
-        />
-      )}
+      <DetailsDialog
+        open={detailsOpen}
+        view={view}
+        row={selectedRow}
+        onClose={closeDetails}
+      />
     </>
   );
 }

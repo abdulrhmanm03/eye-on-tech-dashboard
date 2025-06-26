@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from models import poc as models
 from schemas import poc as schemas
 
-def create_poc(db: Session, poc: schemas.PointOfContactCreate):
+def create_poc_for_user(db: Session, poc: schemas.PointOfContactCreate):
     db_poc = models.PointOfContact(
+        username=poc.username,
         type=poc.type,
         value= poc.value,
         user_id=poc.user_id
@@ -13,8 +14,23 @@ def create_poc(db: Session, poc: schemas.PointOfContactCreate):
     db.refresh(db_poc)
     return db_poc
 
-def get_pocs_by_user(db: Session, user_id: int):
+def create_poc_for_asset(db: Session, poc: schemas.PointOfContactCreate):
+    db_poc = models.PointOfContact(
+        username=poc.username,
+        type=poc.type,
+        value= poc.value,
+        asset_id=poc.asset_id
+    )
+    db.add(db_poc)
+    db.commit()
+    db.refresh(db_poc)
+    return db_poc
+
+def get_user_pocs(db: Session, user_id: int):
     return db.query(models.PointOfContact).filter(models.PointOfContact.user_id == user_id).all()
+
+def get_asset_pocs(db: Session, asset_id: int):
+    return db.query(models.PointOfContact).filter(models.PointOfContact.asset_id == asset_id).all()
 
 def get_poc(db: Session, poc_id: int):
     return db.query(models.PointOfContact).filter(models.PointOfContact.id == poc_id).first()

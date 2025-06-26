@@ -10,7 +10,7 @@ export default function PrivateRoute({ children }: Props) {
 
   // If not logged in, redirect to login
   if (!token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // If logged in, render the page

@@ -9,13 +9,21 @@ from models.user import User
 
 router = APIRouter(prefix="/pocs", tags=["points_of_contact"])
 
-@router.post("/create/", response_model=schemas.PointOfContactRead)
-def create_point_of_contact(
+@router.post("/user/create/", response_model=schemas.PointOfContactRead)
+def create_point_of_contact_for_user(
     poc: schemas.PointOfContactCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return crud.create_poc(db, poc)
+    return crud.create_poc_for_user(db, poc)
+
+@router.post("/asset/create/", response_model=schemas.PointOfContactRead)
+def create_point_of_contact_for_asset(
+    poc: schemas.PointOfContactCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return crud.create_poc_for_asset(db, poc)
 
 @router.get("/user/{user_id}", response_model=List[schemas.PointOfContactRead])
 def get_user_pocs(
@@ -23,7 +31,15 @@ def get_user_pocs(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    return crud.get_pocs_by_user(db, user_id)
+    return crud.get_user_pocs(db, user_id)
+
+@router.get("/asset/{asset_id}", response_model=List[schemas.PointOfContactRead])
+def get_asset_pocs(
+        asset_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    return crud.get_asset_pocs(db, asset_id)
 
 @router.get("/{poc_id}", response_model=schemas.PointOfContactRead)
 def get_point_of_contact(

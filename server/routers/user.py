@@ -43,8 +43,11 @@ def update_user(
     return controller.update_user_controller(user, db, current_user)
 
 @router.get("/", response_model=list[schemas.UserRead])
-def list_users(db: Session = Depends(get_db)):
-    return controller.list_users_controller(db)
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return controller.list_users_controller(db, current_user)
 
 @router.post("/reset_password/{id}", response_model=schemas.UserRead)
 def reset_password(id: int, db: Session = Depends(get_db), current_user : User = Depends(get_current_user)):

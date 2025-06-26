@@ -7,6 +7,7 @@ import {
   Button,
   TextField,
   MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import UserRole from "../enums/UserRoles";
 import api from "../axios_conf";
@@ -33,22 +34,32 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
 }) => {
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
+  const [usernameError, setUsernameError] = useState("");
 
   const Mutation = useMutation({
     mutationFn: createUserRequest,
     onSuccess: () => {
+      setUsername("");
+      setRole("");
+      setUsernameError("");
       onCreated?.();
+      onClose();
     },
-    onError: (error) => {
-      console.error("Failed to create user:", error);
+    onError: (error: any) => {
+      if (
+        error?.response?.status === 400 &&
+        error?.response?.data?.detail?.includes("already taken")
+      ) {
+        setUsernameError(error.response.data.detail);
+      } else {
+        console.error("Failed to create user:", error);
+      }
     },
   });
 
   const handleCreateUser = () => {
+    setUsernameError("");
     Mutation.mutate({ username, role });
-    setUsername("");
-    setRole("");
-    onClose();
   };
 
   const isFormValid = username.trim() !== "" && role !== "";
@@ -66,6 +77,8 @@ const CreateUserForm: React.FC<CreateUserDialogProps> = ({
           fullWidth
           variant="standard"
           required
+          error={!!usernameError}
+          helperText={usernameError}
         />
         <TextField
           select

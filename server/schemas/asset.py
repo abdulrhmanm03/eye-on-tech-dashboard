@@ -1,26 +1,29 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from datetime import date
 from enums.asset_status import AssetStatus
+from models.user import User
 
 # Shared properties
 class AssetBase(BaseModel):
-    type: str
-    tag: str
-    model: str
-    serial_number: str
-    production_year: int
+    type: Optional[str] = None
+    tag: Optional[str] = None
+    model: Optional[str] = None
+    serial_number: Optional[str] = None
+    production_year: Optional[int] = None
     chassis_number: Optional[str] = None
     plate_number: Optional[str] = None
-    location: str
-    geolocation: str
+    location: Optional[str] = None
+    geolocation: Optional[str] = None
     note: Optional[str] = None
-    status: AssetStatus
-    warranty_expiry: date
-    maintenance_expiry: date
-    last_service: date
-    next_service: date
+    status: Optional[AssetStatus] = None
+    warranty_expiry: Optional[date] = None
+    maintenance_expiry: Optional[date] = None
+    last_service: Optional[date] = None
+    next_service: Optional[date] = None
 
+class GrantAccessRequest(BaseModel):
+    user_id: int
 # Properties required for asset creation
 class AssetCreate(AssetBase):
     owner_id: int  # Required to link asset to a user
@@ -28,7 +31,7 @@ class AssetCreate(AssetBase):
 # Properties returned to client
 class AssetRead(AssetBase):
     id: int
-    owner_id: int
+    owner_id: Optional[int] = None
 
     class Config:
         from_attributes = True

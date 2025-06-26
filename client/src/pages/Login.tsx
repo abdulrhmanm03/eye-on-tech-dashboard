@@ -37,7 +37,7 @@ export default function LoginForm() {
         role: data.role,
         id: data.id,
       });
-      navigate("/home");
+      navigate("/");
     },
   });
 

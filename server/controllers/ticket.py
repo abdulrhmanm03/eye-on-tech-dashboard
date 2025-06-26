@@ -25,10 +25,10 @@ def list_tickets_controller(
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
-) -> List[models.Ticket]:
+):
     user_id = current_user.get("id")
     user_role = current_user.get("role")
-    if user_role not in [UserRole.supervisor, UserRole.administrator]:
+    if user_role not in [UserRole.supervisor, UserRole.administrator, UserRole.engineer]:
         return crud_ticket.get_user_tickets(db, user_id)
     return crud_ticket.get_tickets(db, skip, limit)
 
@@ -61,15 +61,20 @@ def update_ticket_controller(
     current_user: User = Depends(get_current_user)
 ) -> TicketRead:
     user_role = current_user.get("role")
+    user_id = current_user.get("id")
 
-    if user_role not in [UserRole.supervisor, UserRole.administrator]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden",
-        )
+    if user_role not in [UserRole.supervisor, UserRole.administrator, UserRole.engineer]:
+        is_allowed = crud_ticket.is_user_part_of_ticket(db, ticket_id, user_id)
+        if not is_allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: You do not have permission to update this ticket.",
+            )
+
     updated = crud_ticket.update_ticket(db, ticket_id, ticket_in)
     if not updated:
         raise HTTPException(status_code=404, detail="Ticket not found")
+
     return updated
 
 
